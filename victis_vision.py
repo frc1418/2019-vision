@@ -2,9 +2,9 @@
 
 try:
     import cscore as cs
-    CSCORE=True
+    CSCORE = True
 except ImportError:
-    CSCORE=False
+    CSCORE = False
 
 import cv2
 import numpy as np
@@ -23,7 +23,6 @@ class VisionMode:
     PHOTO_WITH_IMSHOW = 3
 
 class VictisVision:
-
     enabled = ntproperty('/camera/enabled', False)
 
     def __init__(self, *args, **kwargs):
@@ -83,7 +82,6 @@ class VictisVision:
                 if time == 0:
                     print('error:', self.cvsink.getError())
                     continue
-                #print('got frame', self.enabled)
                 if not self.enabled:
                     self.nt.putBoolean('gear_target_present', False)
                     self.cvSource.putFrame(img)
@@ -153,4 +151,3 @@ if __name__ == '__main__':
                           stream_cv=args.stream_cv,
                           cv_stream_port=int(args.cvstream_port),
                           photo_path=args.photo_path)
-

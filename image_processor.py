@@ -6,7 +6,6 @@ from networktables import NetworkTable
 from networktables.util import ntproperty
 
 class ImageProcessor:
-
     # Values for the lifecam-3000
     VFOV = 45.6 # Camera's vertical field of view
     HFOV = 61 # Camera's horizontal field of view
@@ -46,10 +45,6 @@ class ImageProcessor:
 
         self.nt = NetworkTable.getTable('/camera')
 
-        #self.target = NumberArray()
-        #self.nt.putValue('target', self.target)
-
-
     def preallocate(self, img):
         if self.size is None or self.size[0] != img.shape[0] or self.size[1] != img.shape[1]:
             h, w = img.shape[:2]
@@ -85,24 +80,19 @@ class ImageProcessor:
         return self.bin2
 
     def find_contours(self, img):
-
         thresh_img = self.threshhold(img)
 
         _, contours, _ = cv2.findContours(thresh_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         result = []
-        #print("Len: ", len(contours))
         for cnt in contours:
             approx = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
 
             if self.draw_approx:
-                #print('true')
                 cv2.drawContours(self.out, [approx], -1, self.BLUE, 2, lineType=8)
 
             if len(approx) > 3 and len(approx) < 15:
                 _,_,w,h = cv2.boundingRect(approx)
-                #
                 if h > self.min_height and w > self.min_width:
-                        #print('passed H: %s W: %s' % (w,h))
                         hull = cv2.convexHull(cnt)
                         approx2 = cv2.approxPolyDP(hull,0.01*cv2.arcLength(hull,True),True)
 
@@ -110,13 +100,6 @@ class ImageProcessor:
                             cv2.drawContours(self.out, [approx2], -1, self.GREEN, 2, lineType=8)
 
                         result.append(approx2)
-                        '''
-                        if len(approx2) in (4,5):
-                            result.append(approx)
-
-                            if self.draw_contours:
-                                cv2.drawContours(self.out, [approx], -1, self.YELLOW, 2, lineType=8)'''
-        #print("Len: ", len(result))
         return result
 
     def get_contour_info(self, contour):
@@ -140,7 +123,7 @@ class ImageProcessor:
             self.targets.append(target_info)
 
         self.full_targets = []
-        # Groups contours together if within a certain tolerance
+        # Group contours together if within a certain tolerance
         for i, b in enumerate(self.targets[:]):
             matched = False
             for i2, b2 in enumerate(self.targets[i+1:]):
@@ -161,19 +144,19 @@ class ImageProcessor:
             if not matched:
                 self.full_targets.append(b)
 
-        # Draws gears after `patching` them together
+        # Draw gears after `patching` them together
         if self.draw_gear_patch:
             contours = []
             for g in self.full_targets:
                 cv2.drawContours(self.out, [g['cnt']], -1, self.YELLOW, 2, lineType=8)
                 contours.append(g['cnt'])
 
-        # Breaks out of loop if no complete targets
+        # Break out of loop if no complete targets
         if len(self.full_targets) == 0:
             self.nt.putBoolean('gear_target_present', False)
             return self.out
 
-        # Finds the target that is closest to the center
+        # Find the target that is closest to the center
         h = float(self.size[0])
         w = float(self.size[1])
 
@@ -191,7 +174,7 @@ class ImageProcessor:
                 break
 
 
-        # Finds the another close gear target if present
+        # Find the another close gear target if present
         main_target_contour = primary_target['cnt']
         secondary_target = None
         partial = True
@@ -213,15 +196,11 @@ class ImageProcessor:
                     partial = False
                     break
 
-        # Preforms math on contours to make them useful
+        # Preform math on contours to make them useful
         hull = cv2.convexHull(main_target_contour)
         main_target_contour = cv2.approxPolyDP(hull,0.01*cv2.arcLength(hull,True),True)
 
-        #r = cv2.minAreaRect(main_target_contour)
-        #print(r)
-
         cnt_info = self.get_contour_info(main_target_contour)
-        #print('target c')
         height = self.VFOV * target_info['cy'] / h - self.VFOV/2.0
         angle = self.HFOV * target_info['cx'] / w - self.HFOV/2.0
         print('Height %s' % height)
@@ -242,13 +221,6 @@ class ImageProcessor:
                 skew -= 1
                 if secondary_target['cx'] < primary_target['cx']:
                     skew *= -1
-            #skew = math.pow((primary_target['h']/secondary_target['h']), -2)
-            '''
-            if primary_target['cx'] > secondary_target['cx']:
-                displacement = secondary_target['h'] - primary_target['h']
-            else:
-                displacement = primary_target['h'] - secondary_target['h']
-                '''
             print("Skew %s" % skew)
             self.nt.putNumber('gear_target_skew', skew)
 
@@ -257,12 +229,6 @@ class ImageProcessor:
 
         if self.draw_gear_target:
             cv2.drawContours(self.out, [main_target_contour], -1, self.RED, 2, lineType=8)
-
-        #self.target.clear()
-
-        #self.target += [angle, skew, time]
-
-        #self.nt.putValue('target', self.target)
 
 
     def process_frame(self, frame, time):
@@ -273,4 +239,3 @@ class ImageProcessor:
         self.process_for_gear_target(cnt, time)
 
         return self.out
-

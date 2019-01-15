@@ -1,0 +1,4 @@
+robotpy-cscore
+numpy
+pynetworktables
+opencv-python

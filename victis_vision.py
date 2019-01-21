@@ -83,7 +83,7 @@ class VictisVision:
                     print('error:', self.cvsink.getError())
                     continue
                 if not self.enabled:
-                    self.nt.putBoolean('gear_target_present', False)
+                    self.nt.putBoolean('target_present', False)
                     self.cvSource.putFrame(img)
                     continue
 

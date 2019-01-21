@@ -29,14 +29,14 @@ class ImageProcessor:
     broken_tolerance_x = ntproperty('/camera/broken_tolerance_x', 2)
     broken_tolerance_y = ntproperty('/camera/broken_tolerance_y', 20)
 
-    gear_spacing = ntproperty('/camera/gear_spacing', 2)
+    target_spacing = ntproperty('/camera/target_spacing', 2)
 
     draw_thresh = ntproperty('/camera/draw_thresh', True)
     draw_approx = ntproperty('/camera/draw_approx', False)
     draw_approx2 = ntproperty('/camera/draw_approx2', False)
     draw_contours = ntproperty('/camera/draw_contours', False)
-    draw_gear_patch = ntproperty('/camera/draw_gear_patch', False)
-    draw_gear_target = ntproperty('/camera/draw_gear_target', True)
+    draw_target_patch = ntproperty('/camera/draw_target_patch', False)
+    draw_target = ntproperty('/camera/draw_target', True)
 
     def __init__(self):
         self.size = None
@@ -112,8 +112,8 @@ class ImageProcessor:
 
         return contour_info
 
-    def process_for_gear_target(self, contours, time):
-        # Filter contours for complete gear targets and possible 'broken gear targets'
+    def process_for_target(self, contours, time):
+        # Filter contours for complete targets and possible 'broken targets'
         self.targets = []
 
         for c in contours:
@@ -144,8 +144,8 @@ class ImageProcessor:
             if not matched:
                 self.full_targets.append(b)
 
-        # Draw gears after `patching` them together
-        if self.draw_gear_patch:
+        # Draw targets after `patching` them together
+        if self.draw_target_patch:
             contours = []
             for g in self.full_targets:
                 cv2.drawContours(self.out, [g['cnt']], -1, self.YELLOW, 2, lineType=8)
@@ -153,7 +153,7 @@ class ImageProcessor:
 
         # Break out of loop if no complete targets
         if len(self.full_targets) == 0:
-            self.nt.putBoolean('gear_target_present', False)
+            self.nt.putBoolean('target_present', False)
             return self.out
 
         # Find the target that is closest to the center
@@ -174,7 +174,7 @@ class ImageProcessor:
                 break
 
 
-        # Find the another close gear target if present
+        # Find the another close target if present
         main_target_contour = primary_target['cnt']
         secondary_target = None
         partial = True
@@ -182,7 +182,7 @@ class ImageProcessor:
             for i, g in enumerate(self.full_targets):
                 greater_than = True
 
-                if abs(g['cx'] - primary_target['cx']) < self.gear_spacing * primary_target['h']:
+                if abs(g['cx'] - primary_target['cx']) < self.target_spacing * primary_target['h']:
 
                     for g2 in self.full_targets[i:]:
                         if g['cx'] - (h / 2) < g2['cx'] - (h / 2):
@@ -206,8 +206,8 @@ class ImageProcessor:
         print('Height %s' % height)
         print('Angle %s' % angle)
 
-        self.nt.putBoolean('gear_target_present', True)
-        self.nt.putBoolean('gear_target_partial', partial)
+        self.nt.putBoolean('target_present', True)
+        self.nt.putBoolean('target_partial', partial)
 
         if not partial:
             skew = 0
@@ -222,12 +222,12 @@ class ImageProcessor:
                 if secondary_target['cx'] < primary_target['cx']:
                     skew *= -1
             print("Skew %s" % skew)
-            self.nt.putNumber('gear_target_skew', skew)
+            self.nt.putNumber('target_skew', skew)
 
-        self.nt.putNumber('gear_target_angle', angle)
-        self.nt.putNumber('gear_target_height', height)
+        self.nt.putNumber('target_angle', angle)
+        self.nt.putNumber('target_height', height)
 
-        if self.draw_gear_target:
+        if self.draw_target:
             cv2.drawContours(self.out, [main_target_contour], -1, self.RED, 2, lineType=8)
 
 
@@ -236,6 +236,6 @@ class ImageProcessor:
 
         cnt = self.find_contours(frame)
 
-        self.process_for_gear_target(cnt, time)
+        self.process_for_target(cnt, time)
 
         return self.out

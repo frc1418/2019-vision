@@ -106,7 +106,7 @@ class ImageProcessor:
             if len(approx) > 3 and len(approx) < 15:
                 _,_,w,h = cv2.boundingRect(approx)
                 if h > self.min_height and w > self.min_width:
-                        hull = cv2.convexHull(cnt)
+                    hull = cv2.convexHull(cnt)
                         approx2 = cv2.approxPolyDP(hull,0.01*cv2.arcLength(hull,True),True)
 
                         if self.draw_approx2:
@@ -381,9 +381,9 @@ if __name__ == '__main__':
         raise 'No vision mode set!'
 
     vision = VictisVision(mode=mode,
-                          nt_address=args.nt_address,
-                          camera_port=int(args.camera_port),
-                          stream_port=int(args.stream_port),
-                          stream_cv=args.stream_cv,
-                          cv_stream_port=int(args.cvstream_port),
-                          photo_path=args.photo_path)
+            nt_address=args.nt_address,
+            camera_port=int(args.camera_port),
+            stream_port=int(args.stream_port),
+            stream_cv=args.stream_cv,
+            cv_stream_port=int(args.cvstream_port),
+            photo_path=args.photo_path)

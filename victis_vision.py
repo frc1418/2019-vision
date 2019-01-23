@@ -107,12 +107,12 @@ class ImageProcessor:
                 _,_,w,h = cv2.boundingRect(approx)
                 if h > self.min_height and w > self.min_width:
                     hull = cv2.convexHull(cnt)
-                        approx2 = cv2.approxPolyDP(hull,0.01*cv2.arcLength(hull,True),True)
+                    approx2 = cv2.approxPolyDP(hull,0.01*cv2.arcLength(hull,True),True)
 
-                        if self.draw_approx2:
-                            cv2.drawContours(self.out, [approx2], -1, self.GREEN, 2, lineType=8)
+                    if self.draw_approx2:
+                        cv2.drawContours(self.out, [approx2], -1, self.GREEN, 2, lineType=8)
 
-                        result.append(approx2)
+                    result.append(approx2)
         return result
 
     def get_contour_info(self, contour):

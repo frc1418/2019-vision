@@ -10,10 +10,8 @@ import cv2
 import numpy as np
 
 from enum import Enum
-from image_processor import ImageProcessor
 import argparse
 
-from networktables import NetworkTable
 from networktables.util import ntproperty
 
 import math
@@ -31,12 +29,12 @@ class ImageProcessor:
     min_width = ntproperty('/camera/min_width', 2)
     min_height = ntproperty('/camera/min_height', 2)
 
-    thresh_hue_lower = ntproperty('/camera/thresholds/hue_low', 60)
-    thresh_hue_high = ntproperty('/camera/thresholds/hue_high', 100)
-    thresh_sat_lower = ntproperty('/camera/thresholds/sat_low', 150)
-    thresh_sat_high = ntproperty('/camera/thresholds/sat_high', 255)
-    thresh_val_lower = ntproperty('/camera/thresholds/val_low', 140)
-    thresh_val_high = ntproperty('/camera/thresholds/val_high', 255)
+    threshold_hue_lower = ntproperty('/camera/thresholds/hue_low', 60)
+    threshold_hue_high = ntproperty('/camera/thresholds/hue_high', 100)
+    threshold_sat_lower = ntproperty('/camera/thresholds/sat_low', 150)
+    threshold_sat_high = ntproperty('/camera/thresholds/sat_high', 255)
+    threshold_val_lower = ntproperty('/camera/thresholds/val_low', 140)
+    threshold_val_high = ntproperty('/camera/thresholds/val_high', 255)
 
     square_tolerance = ntproperty('/camera/square_tolerance', 10)
     broken_tolerance_x = ntproperty('/camera/broken_tolerance_x', 2)
@@ -53,10 +51,8 @@ class ImageProcessor:
 
     def __init__(self):
         self.size = None
-        self.thresh_low = np.array([self.thresh_hue_lower, self.thresh_sat_lower, self.thresh_val_lower], dtype=np.uint8)
-        self.thresh_high = np.array([self.thresh_hue_high, self.thresh_sat_high, self.thresh_val_high], dtype=np.uint8)
-
-        self.nt = NetworkTable.getTable('/camera')
+        self.threshold_low = np.array([self.threshold_hue_lower, self.threshold_sat_lower, self.threshold_val_lower], dtype=np.uint8)
+        self.threshold_high = np.array([self.threshold_hue_high, self.threshold_sat_high, self.threshold_val_high], dtype=np.uint8)
 
     def preallocate(self, img):
         if self.size is None or self.size[0] != img.shape[0] or self.size[1] != img.shape[1]:
@@ -81,7 +77,7 @@ class ImageProcessor:
 
     def threshhold(self, img):
         cv2.cvtColor(img, cv2.COLOR_BGR2HSV, dst=self.hsv)
-        cv2.inRange(self.hsv, self.thresh_low, self.thresh_high, dst=self.bin)
+        cv2.inRange(self.hsv, self.threshold_low, self.threshold_high, dst=self.bin)
 
         cv2.morphologyEx(self.bin, cv2.MORPH_CLOSE, self.morphKernel, dst=self.bin2, iterations=1)
 
@@ -93,9 +89,9 @@ class ImageProcessor:
         return self.bin2
 
     def find_contours(self, img):
-        thresh_img = self.threshhold(img)
+        threshold_img = self.threshhold(img)
 
-        _, contours, _ = cv2.findContours(thresh_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        _, contours, _ = cv2.findContours(threshold_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         result = []
         for cnt in contours:
             approx = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
@@ -166,7 +162,7 @@ class ImageProcessor:
 
         # Break out of loop if no complete targets
         if len(self.full_targets) == 0:
-            self.nt.putBoolean('target_present', False)
+            self.target_present = False
             return self.out
 
         # Find the target that is closest to the center
@@ -219,8 +215,8 @@ class ImageProcessor:
         print('Height %s' % height)
         print('Angle %s' % angle)
 
-        self.nt.putBoolean('target_present', True)
-        self.nt.putBoolean('target_partial', partial)
+        self.target_present = True
+        self.target_partial = partial
 
         if not partial:
             skew = 0
@@ -235,10 +231,10 @@ class ImageProcessor:
                 if secondary_target['cx'] < primary_target['cx']:
                     skew *= -1
             print("Skew %s" % skew)
-            self.nt.putNumber('target_skew', skew)
+            self.target_skew = skew
 
-        self.nt.putNumber('target_angle', angle)
-        self.nt.putNumber('target_height', height)
+        self.target_angle = angle
+        self.target_height = height
 
         if self.draw_target:
             cv2.drawContours(self.out, [main_target_contour], -1, self.RED, 2, lineType=8)
@@ -271,12 +267,6 @@ class VictisVision:
         if self.mode == VisionMode.CSCORE_WITH_STREAM or self.mode == VisionMode.CSCORE_STREAM_ONLY:
             if not CSCORE:
                 raise 'Error: cscore option selected but cscore failed to import'
-
-        NetworkTable.setIPAddress(kwargs.pop('nt_address', 'localhost'))
-        NetworkTable.setClientMode()
-        NetworkTable.initialize()
-
-        self.nt = NetworkTable.getTable('/camera')
 
         self.processor = ImageProcessor()
 
@@ -319,7 +309,7 @@ class VictisVision:
                     print('error:', self.cvsink.getError())
                     continue
                 if not self.enabled:
-                    self.nt.putBoolean('target_present', False)
+                    self.target_present = False
                     self.cvSource.putFrame(img)
                     continue
 
@@ -343,47 +333,6 @@ class VictisVision:
         exit(0)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--nt-address', default='localhost', help='Adress of NetworkTables server')
-
-    parser.add_argument('-s','--stream-only', action='store_true', default=False, help='Streams only camera output')
-    parser.add_argument('-cv','--cv-stream', action='store_true', default=False, help='Streams camera output and runs it through OpenCv processing')
-    parser.add_argument('-i','--image', action='store_true', default=False, help='Processes single photo image')
-
-    parser.add_argument('--camera-port', default=0, help='Port of camera if using \'-s\' or \'-cv\'')
-    parser.add_argument('--stream-port', default=8081, help='Port of camera stream if using \'-s\' or \'-cv\'')
-
-    parser.add_argument('--stream-cv', action='store_true', default=False, help='Stream out after OpenCV processing if using \'-cv\'')
-    parser.add_argument('--cvstream-port', default=8082, help='Port of OpenCV stream if using \'-cv\'')
-
-    parser.add_argument('--photo-path', default=None, help='Path of photo if using \'-i\'')
-
-    args = parser.parse_args()
-
-    mode = None
-    if args.stream_only:
-        mode = VisionMode.CSCORE_STREAM_ONLY
-    if args.cv_stream:
-        if mode is not None:
-            raise 'Multiple modes set please use only \'-i\', \'-s\', or \'-cv\''
-        mode = VisionMode.CSCORE_WITH_STREAM
-    if args.image:
-        if mode is not None:
-            raise 'Multiple modes set please use only \'-i\', \'-s\', or \'-cv\''
-
-        if args.photo_path is None:
-            raise 'Photo path must be passed in image mode'
-
-        mode = VisionMode.PHOTO_WITH_IMSHOW
-
-    if mode is None:
-        raise 'No vision mode set!'
-
-    vision = VictisVision(mode=mode,
-            nt_address=args.nt_address,
-            camera_port=int(args.camera_port),
-            stream_port=int(args.stream_port),
-            stream_cv=args.stream_cv,
-            cv_stream_port=int(args.cvstream_port),
-            photo_path=args.photo_path)
+    vision = VictisVision(nt_address='localhost',
+                          camera_port=0,
+                          stream_port=8089)

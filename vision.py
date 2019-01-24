@@ -74,6 +74,7 @@ def findContours(frame, mask):
     # Copies frame and stores it in image
     image = frame.copy()
     # Processes the contours, takes in (contours, output_image, (centerOfImage) #TODO finding largest
+    print('Found %d contours initially.' % len(contours))
     if len(contours) != 0:
         image = findTargets(contours, image, centerX, centerY)
     # Shows the contours overlayed on the original video
@@ -85,6 +86,7 @@ def findContours(frame, mask):
 # centerX is center x coordinate of image
 # centerY is center y coordinate of image
 def findTargets(contours, image, centerX, centerY):
+    print('Searching for targets...')
     screenHeight, screenWidth, channels = image.shape;
     #Seen vision targets (correct angle, adjacent to each other)
     targets = []
@@ -198,6 +200,7 @@ def findTargets(contours, image, centerX, centerY):
 
                 #Push to NetworkTable
                 table.putNumber("yawToTarget", yawToTarget)
+                print(yawToTarget)
 
                 #Make sure no duplicates, then append
                 if [centerOfTarget, yawToTarget] not in targets:
@@ -419,6 +422,7 @@ if __name__ == "__main__":
     # start NetworkTables and create table instance
     ntinst = NetworkTablesInstance.getDefault()
     table = NetworkTables.getTable("PiData")
+    print('Initializing NetworkTables')
     if server:
         print("Setting up NetworkTables server")
         ntinst.startServer()

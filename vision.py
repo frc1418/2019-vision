@@ -59,25 +59,25 @@ def find_contours(frame, mask):
     # Get frame resolution
     screenHeight, screenWidth, _ = frame.shape
     # Calculate center of screen
-    centerX = (screenWidth / 2) - .5
-    centerY = (screenHeight / 2) - .5
+    center_x = (screenWidth / 2) - .5
+    center_y = (screenHeight / 2) - .5
     # Copy frame to image
     image = frame.copy()
     # Processes contours
     if len(contours) != 0:
-        image = find_targets(contours, image, centerX, centerY)
+        image = find_targets(contours, image, center_x, center_y)
     # Return image of contours overlayed on original video
     return image
 
 
-def find_targets(contours, image, centerX, centerY):
+def find_targets(contours, image, center_x, center_y):
     """
     Draw contours, calculating target angle.
 
     :param contours: list of contours among which to find targets.
     :param image: image upon which to draw contours.
-    :param centerX: x coordinate of image center.
-    :param centerY: y coordinate of image center.
+    :param center_x: x coordinate of image center.
+    :param center_y: y coordinate of image center.
     """
     print('Searching for targets...')
     screenHeight, screenWidth, _ = image.shape;
@@ -108,9 +108,9 @@ def find_targets(contours, image, centerX, centerY):
                 rotation = getEllipseRotation(image, contour)
 
                 # Calculate yaw of contour (horizontal position in degrees)
-                yaw = calculateYaw(cx, centerX, H_FOCAL_LENGTH)
+                yaw = calculateYaw(cx, center_x, H_FOCAL_LENGTH)
                 # Calculate pitch of contour (vertical position in degrees)
-                pitch = calculatePitch(cy, centerY, V_FOCAL_LENGTH)
+                pitch = calculatePitch(cy, center_y, V_FOCAL_LENGTH)
 
                 ### DRAW CONTOUR ###
                 # Get rotated bounding rectangle of contour
@@ -149,39 +149,38 @@ def find_targets(contours, image, centerX, centerY):
 
         # Find targets from contours
         for i in range(len(largest_contours) - 1):
-            # Rotation of two adjacent contours
-            tilt1 = largest_contours[i][2]
-            tilt2 = largest_contours[i + 1][2]
+            # Check rotation of adjacent contours
+            tilt_left = largest_contours[i][2]
+            tilt_right = largest_contours[i + 1][2]
 
-            #x coords of contours
-            cx1 = largest_contours[i][0]
-            cx2 = largest_contours[i + 1][0]
+            # Contour coordinates
+            cx_left = largest_contours[i][0]
+            cx_right = largest_contours[i + 1][0]
+            cy_left = largest_contours[i][1]
+            cy_right = largest_contours[i + 1][1]
 
-            cy1 = largest_contours[i][1]
-            cy2 = largest_contours[i + 1][1]
-            # If contour angles are opposite
-            if (np.sign(tilt1) != np.sign(tilt2)):
-                center_of_target = math.floor((cx1 + cx2) / 2)
-                #ellipse negative tilt means rotated to right
-                #Note: if using rotated rect (min area rectangle)
-                #      negative tilt means rotated to left
+            # If contour angles are indeed opposite
+            if (np.sign(tilt_left) != np.sign(tilt_right)):
+                target_center = math.floor((cx1 + cx2) / 2)
+                # Negative tilt -> Rotated to the right
+                # NOTE: if using rotated rect (min area rectangle), negative tilt means rotated to left
                 # If left contour rotation is tilted to the left then skip iteration
-                if (tilt1 > 0):
-                    if (cx1 < cx2):
+                if (tilt_left > 0):
+                    if (cx_left < cx_right):
                         continue
-                # If left contour rotation is tilted to the left then skip iteration
-                if (tilt2 > 0):
-                    if (cx2 < cx1):
+                # If right contour rotation is tilted to the right then skip iteration
+                if (tilt_right > 0):
+                    if (cx_right < cx_left):
                         continue
-                #Angle from center of camera to target (what you should pass into gyro)
-                yaw_to_target = calculateYaw(center_of_target, centerX, H_FOCAL_LENGTH)
+                # Angle from center of camera to target (what you should pass into gyro)
+                target_yaw = calculateYaw(target_center, center_x, H_FOCAL_LENGTH)
 
                 #Push to NetworkTable
-                table.putNumber("yaw_to_target", yaw_to_target)
+                table.putNumber("target_yaw", target_yaw)
 
                 #Make sure no duplicates, then append
-                if [center_of_target, yaw_to_target] not in targets:
-                    targets.append([center_of_target, yaw_to_target])
+                if [target_center, target_yaw] not in targets:
+                    targets.append([target_center, target_yaw])
     #Check if there are targets seen
     if (len(targets) > 0):
         #Sorts targets based on x coords to break any angle tie
@@ -197,7 +196,7 @@ def find_targets(contours, image, centerX, centerY):
 
         table.putNumber("currentAngleError", currentAngleError)
 
-    cv2.line(image, (round(centerX), screenHeight), (round(centerX), 0), (255, 255, 255), 2)
+    cv2.line(image, (round(center_x), screenHeight), (round(center_x), 0), (255, 255, 255), 2)
 
     return image
 
@@ -240,14 +239,14 @@ def calculateDistance(heightOfCamera, heightOfTarget, pitch):
 
 # Uses trig and focal length of camera to find yaw.
 # Link to further explanation: https://docs.google.com/presentation/d/1ediRsI-oR3-kwawFJZ34_ZTlQS2SDBLjZasjzZ-eXbQ/pub?start=false&loop=false&slide=id.g12c083cffa_0_298
-def calculateYaw(pixelX, centerX, hFocalLength):
-    yaw = math.degrees(math.atan((pixelX - centerX) / hFocalLength))
+def calculateYaw(pixel_x, center_x, h_focal_length):
+    yaw = math.degrees(math.atan((pixel_x - center_x) / h_focal_length))
     return round(yaw)
 
 
 # Link to further explanation: https://docs.google.com/presentation/d/1ediRsI-oR3-kwawFJZ34_ZTlQS2SDBLjZasjzZ-eXbQ/pub?start=false&loop=false&slide=id.g12c083cffa_0_298
-def calculatePitch(pixelY, centerY, vFocalLength):
-    pitch = math.degrees(math.atan((pixelY - centerY) / vFocalLength))
+def calculatePitch(pixel_y, center_y, v_focal_length):
+    pitch = math.degrees(math.atan((pixel_y - center_y) / v_focal_length))
     # Just stopped working have to do this:
     pitch *= -1
     return round(pitch)

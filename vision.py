@@ -345,11 +345,7 @@ def readConfig():
         return False
 
     # team number
-    try:
-        team = j["team"]
-    except KeyError:
-        parseError("could not read team number")
-        return False
+    team = 1418
 
     # ntmode (optional)
     if "ntmode" in j:

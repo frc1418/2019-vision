@@ -11,21 +11,16 @@ from networktables import NetworkTables
 import math
 
 
-###################### PROCESSING OPENCV ################################
-
-# Angles in radians
-
-# image size ratioed to 16:9
-image_width = 480
-image_height = 270
-
-# Lifecam 3000 from datasheet
+# Lifecam 3000
 # Datasheet: https://dl2jx7zfbtwvr.cloudfront.net/specsheets/WEBC1010.pdf
 diagonalView = math.radians(68.5)
 
 # 16:9 aspect ratio
 horizontalAspect = 16
 verticalAspect = 9
+
+image_width = 480
+image_height = 270
 
 # Reasons for using diagonal aspect is to calculate horizontal field of view.
 diagonalAspect = math.hypot(horizontalAspect, verticalAspect)
@@ -90,11 +85,11 @@ def findTargets(contours, image, centerX, centerY):
     targets = []
 
     if len(contours) >= 2:
-        #Sort contours by area size (biggest to smallest)
-        cntsSorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
+        # Sort contours in descending order by size
+        contours_sorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
 
-        biggestCnts = []
-        for cnt in cntsSorted:
+        largest_contours = []
+        for cnt in contours_sorted:
             # Get moments of contour; mainly for centroid
             M = cv2.moments(cnt)
             # Get convex hull (bounding polygon on contour)
@@ -112,7 +107,7 @@ def findTargets(contours, image, centerX, centerY):
                     cy = int(M["m01"] / M["m00"])
                 else:
                     cx, cy = 0, 0
-                if(len(biggestCnts) < 13):
+                if(len(largest_contours) < 13):
                     #### CALCULATES ROTATION OF CONTOUR BY FITTING ELLIPSE ##########
                     rotation = getEllipseRotation(image, cnt)
 
@@ -161,27 +156,27 @@ def findTargets(contours, image, centerX, centerY):
                     cv2.circle(image, center, radius, (23, 184, 80), 1)
 
                     # Appends important info to array
-                    if [cx, cy, rotation, cnt] not in biggestCnts:
-                         biggestCnts.append([cx, cy, rotation, cnt])
+                    if [cx, cy, rotation, cnt] not in largest_contours:
+                         largest_contours.append([cx, cy, rotation, cnt])
 
 
         # Sorts array based on coordinates (leftmost to rightmost) to make sure contours are adjacent
-        biggestCnts = sorted(biggestCnts, key=lambda x: x[0])
+        largest_contours = sorted(largest_contours, key=lambda x: x[0])
         # Target Checking
-        for i in range(len(biggestCnts) - 1):
+        for i in range(len(largest_contours) - 1):
             #Rotation of two adjacent contours
-            tilt1 = biggestCnts[i][2]
-            tilt2 = biggestCnts[i + 1][2]
+            tilt1 = largest_contours[i][2]
+            tilt2 = largest_contours[i + 1][2]
 
             #x coords of contours
-            cx1 = biggestCnts[i][0]
-            cx2 = biggestCnts[i + 1][0]
+            cx1 = largest_contours[i][0]
+            cx2 = largest_contours[i + 1][0]
 
-            cy1 = biggestCnts[i][1]
-            cy2 = biggestCnts[i + 1][1]
+            cy1 = largest_contours[i][1]
+            cy2 = largest_contours[i + 1][1]
             # If contour angles are opposite
             if (np.sign(tilt1) != np.sign(tilt2)):
-                centerOfTarget = math.floor((cx1 + cx2) / 2)
+                center_of_target = math.floor((cx1 + cx2) / 2)
                 #ellipse negative tilt means rotated to right
                 #Note: if using rotated rect (min area rectangle)
                 #      negative tilt means rotated to left
@@ -194,14 +189,14 @@ def findTargets(contours, image, centerX, centerY):
                     if (cx2 < cx1):
                         continue
                 #Angle from center of camera to target (what you should pass into gyro)
-                yawToTarget = calculateYaw(centerOfTarget, centerX, H_FOCAL_LENGTH)
+                yaw_to_target = calculateYaw(center_of_target, centerX, H_FOCAL_LENGTH)
 
                 #Push to NetworkTable
-                table.putNumber("yawToTarget", yawToTarget)
+                table.putNumber("yaw_to_target", yaw_to_target)
 
                 #Make sure no duplicates, then append
-                if [centerOfTarget, yawToTarget] not in targets:
-                    targets.append([centerOfTarget, yawToTarget])
+                if [center_of_target, yaw_to_target] not in targets:
+                    targets.append([center_of_target, yaw_to_target])
     #Check if there are targets seen
     if (len(targets) > 0):
         #Sorts targets based on x coords to break any angle tie
@@ -418,7 +413,7 @@ if __name__ == "__main__":
 
     # start NetworkTables and create table instance
     ntinst = NetworkTablesInstance.getDefault()
-    table = NetworkTables.getTable("PiData")
+    table = NetworkTables.getTable("vision")
     if server:
         print("Setting up NetworkTables server")
         ntinst.startServer()

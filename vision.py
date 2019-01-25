@@ -13,24 +13,24 @@ import math
 
 # Lifecam 3000
 # Datasheet: https://dl2jx7zfbtwvr.cloudfront.net/specsheets/WEBC1010.pdf
-diagonalView = math.radians(68.5)
+diagonal_view = math.radians(68.5)
 
 # 16:9 aspect ratio
-horizontalAspect = 16
-verticalAspect = 9
+horizontal_aspect = 16
+vertical_aspect = 9
 
 image_width = 480
 image_height = 270
 
 # Reasons for using diagonal aspect is to calculate horizontal field of view.
-diagonalAspect = math.hypot(horizontalAspect, verticalAspect)
+diagonal_aspect = math.hypot(horizontal_aspect, vertical_aspect)
 # Calculations: http://vrguy.blogspot.com/2013/04/converting-diagonal-field-of-view-and.html
-horizontalView = math.atan(math.tan(diagonalView/2) * (horizontalAspect / diagonalAspect)) * 2
-verticalView = math.atan(math.tan(diagonalView/2) * (verticalAspect / diagonalAspect)) * 2
+horizontal_view = math.atan(math.tan(diagonal_view/2) * (horizontal_aspect / diagonal_aspect)) * 2
+vertical_view = math.atan(math.tan(diagonal_view/2) * (vertical_aspect / diagonal_aspect)) * 2
 
 # Focal Length calculations: https://docs.google.com/presentation/d/1ediRsI-oR3-kwawFJZ34_ZTlQS2SDBLjZasjzZ-eXbQ/pub?start=false&loop=false&slide=id.g12c083cffa_0_165
-H_FOCAL_LENGTH = image_width / (2*math.tan((horizontalView/2)))
-V_FOCAL_LENGTH = image_height / (2*math.tan((verticalView/2)))
+H_FOCAL_LENGTH = image_width / (2*math.tan((horizontal_view/2)))
+V_FOCAL_LENGTH = image_height / (2*math.tan((vertical_view/2)))
 
 def threshold_video(frame):
     """
@@ -49,12 +49,12 @@ def threshold_video(frame):
     return mask
 
 
-def findContours(frame, mask):
+def find_contours(frame, mask):
     """
     Find contours of image mask, displaying them over original stream.
     """
     # Calculate contours
-    _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    _, contours, _ = cv2.find_contours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
     print('Found %d contours initially.' % len(contours))
     # Get frame resolution
     screenHeight, screenWidth, _ = frame.shape
@@ -65,12 +65,12 @@ def findContours(frame, mask):
     image = frame.copy()
     # Processes contours
     if len(contours) != 0:
-        image = findTargets(contours, image, centerX, centerY)
+        image = find_targets(contours, image, centerX, centerY)
     # Return image of contours overlayed on original video
     return image
 
 
-def findTargets(contours, image, centerX, centerY):
+def find_targets(contours, image, centerX, centerY):
     """
     Draw contours, calculating target angle.
 
@@ -86,10 +86,10 @@ def findTargets(contours, image, centerX, centerY):
 
     if len(contours) >= 2:
         # Sort contours in descending order by size
-        contours_sorted = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
+        contours.sort(key=lambda x: cv2.contourArea(x), reverse=True)
 
         largest_contours = []
-        for cnt in contours_sorted:
+        for cnt in contours:
             # Get moments of contour; mainly for centroid
             M = cv2.moments(cnt)
             # Get convex hull (bounding polygon on contour)
@@ -395,7 +395,7 @@ def readConfig():
     return True
 
 """Start running the camera."""
-def startCamera(config):
+def start_camera(config):
     print("Starting camera '{}' on {}".format(config.name, config.path))
     cs = CameraServer.getInstance()
     camera = cs.startAutomaticCapture(name=config.name, path=config.path)
@@ -425,7 +425,7 @@ if __name__ == "__main__":
     cameras = []
     streams = []
     for cameraConfig in cameraConfigs:
-        cs, cameraCapture = startCamera(cameraConfig)
+        cs, cameraCapture = start_camera(cameraConfig)
         streams.append(cs)
         cameras.append(cameraCapture)
     #Get the first camera
@@ -452,7 +452,7 @@ if __name__ == "__main__":
 
 
         threshold = threshold_video(frame)
-        processed = findContours(frame, threshold)
+        processed = find_contours(frame, threshold)
         # (optional) send some image back to the dashboard
         outputStream.putFrame(processed)
 

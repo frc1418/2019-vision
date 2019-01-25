@@ -200,7 +200,6 @@ def findTargets(contours, image, centerX, centerY):
 
                 #Push to NetworkTable
                 table.putNumber("yawToTarget", yawToTarget)
-                print(yawToTarget)
 
                 #Make sure no duplicates, then append
                 if [centerOfTarget, yawToTarget] not in targets:
@@ -227,7 +226,7 @@ def findTargets(contours, image, centerX, centerY):
 
 # Checks if contours are worthy based off of contour area and (not currently) hull area
 def checkContours(cntSize, hullSize):
-    return cntSize > 200
+    return cntSize > 1
 
 
 # Forgot how exactly it works, but it works!
@@ -422,7 +421,6 @@ if __name__ == "__main__":
     # start NetworkTables and create table instance
     ntinst = NetworkTablesInstance.getDefault()
     table = NetworkTables.getTable("PiData")
-    print('Initializing NetworkTables')
     if server:
         print("Setting up NetworkTables server")
         ntinst.startServer()

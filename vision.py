@@ -54,7 +54,7 @@ def find_contours(frame, mask):
     Find contours of image mask, displaying them over original stream.
     """
     # Calculate contours
-    _, contours, _ = cv2.find_contours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
+    _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
     print('Found %d contours initially.' % len(contours))
     # Get frame resolution
     screenHeight, screenWidth, _ = frame.shape
@@ -89,82 +89,67 @@ def find_targets(contours, image, centerX, centerY):
         contours.sort(key=lambda x: cv2.contourArea(x), reverse=True)
 
         largest_contours = []
-        for cnt in contours:
-            # Get moments of contour; mainly for centroid
-            M = cv2.moments(cnt)
+        for contour in contours:
             # Get convex hull (bounding polygon on contour)
-            hull = cv2.convexHull(cnt)
-            # Calculate Contour area
-            cntArea = cv2.contourArea(cnt)
-            # calculate area of convex hull
-            hullArea = cv2.contourArea(hull)
-            # Filters contours based off of size
-            if (checkContours(cntArea, hullArea)):
-                ### MOSTLY DRAWING CODE, BUT CALCULATES IMPORTANT INFO ###
-                # Gets the centeroids of contour
-                if M["m00"] != 0:
-                    cx = int(M["m10"] / M["m00"])
-                    cy = int(M["m01"] / M["m00"])
-                else:
-                    cx, cy = 0, 0
-                if(len(largest_contours) < 13):
-                    #### CALCULATES ROTATION OF CONTOUR BY FITTING ELLIPSE ##########
-                    rotation = getEllipseRotation(image, cnt)
+            hull = cv2.convexHull(contour)
+            # Calculate areas of contour and hull
+            contour_area = cv2.contourArea(contour)
+            hull_area = cv2.contourArea(hull)
+            # Get moments of contour for centroid calculations
+            moments = cv2.moments(contour)
+            # Find centeroids of contour
+            if moments["m00"] != 0:
+                cx = int(moments["m10"] / moments["m00"])
+                cy = int(moments["m01"] / moments["m00"])
+            else:
+                cx, cy = 0, 0
+            if len(largest_contours) < 13:
+                ### CALCULATE CONTOUR ROTATION BY FITTING ELLIPSE ###
+                rotation = getEllipseRotation(image, contour)
 
-                    # Calculates yaw of contour (horizontal position in degrees)
-                    yaw = calculateYaw(cx, centerX, H_FOCAL_LENGTH)
-                    # Calculates yaw of contour (horizontal position in degrees)
-                    pitch = calculatePitch(cy, centerY, V_FOCAL_LENGTH)
+                # Calculate yaw of contour (horizontal position in degrees)
+                yaw = calculateYaw(cx, centerX, H_FOCAL_LENGTH)
+                # Calculate pitch of contour (vertical position in degrees)
+                pitch = calculatePitch(cy, centerY, V_FOCAL_LENGTH)
 
-                    ##### DRAWS CONTOUR######
-                    # Gets rotated bounding rectangle of contour
-                    rect = cv2.minAreaRect(cnt)
-                    # Creates box around that rectangle
-                    box = cv2.boxPoints(rect)
-                    # Not exactly sure
-                    box = np.int0(box)
-                    # Draws rotated rectangle
-                    cv2.drawContours(image, [box], 0, (23, 184, 80), 3)
+                ### DRAW CONTOUR ###
+                # Get rotated bounding rectangle of contour
+                rect = cv2.minAreaRect(contour)
+                # Create box around that rectangle
+                box = cv2.boxPoints(rect)
+                box = np.int0(box)
+                # Draw rotated rectangle
+                cv2.drawContours(image, [box], 0, (23, 184, 80), 3)
 
+                # TODO: potentially decrease business of interface
+                # Draw vertical white line passing through center of contour
+                cv2.line(image, (cx, screenHeight), (cx, 0), (255, 255, 255))
+                # Draw white circle at center of contour
+                cv2.circle(image, (cx, cy), 6, (255, 255, 255))
 
-                    # Calculates yaw of contour (horizontal position in degrees)
-                    yaw = calculateYaw(cx, centerX, H_FOCAL_LENGTH)
-                    # Calculates yaw of contour (horizontal position in degrees)
-                    pitch = calculatePitch(cy, centerY, V_FOCAL_LENGTH)
+                # Draw contours
+                cv2.drawContours(image, [contour], 0, (23, 184, 80), 1)
 
+                # Get coordinates and radius of contour's enclosing circle
+                (x, y), radius = cv2.minEnclosingCircle(contour)
+                # Round coordinates and radius
+                center = (int(x), int(y))
+                radius = int(radius)
+                # Calculate then draw bounding rectangle of contour
+                rx, ry, rw, rh = cv2.boundingRect(contour)
+                cv2.rectangle(image, (rx, ry), (rx + rw, ry + rh), (23, 184, 80), 1)
 
-                    # Draws a vertical white line passing through center of contour
-                    cv2.line(image, (cx, screenHeight), (cx, 0), (255, 255, 255))
-                    # Draws a white circle at center of contour
-                    cv2.circle(image, (cx, cy), 6, (255, 255, 255))
+                cv2.circle(image, center, radius, (23, 184, 80), 1)
 
-                    # Draws the contours
-                    cv2.drawContours(image, [cnt], 0, (23, 184, 80), 1)
+                # Append important info to array
+                largest_contours.append([cx, cy, rotation, contour])
 
-                    # Gets the (x, y) and radius of the enclosing circle of contour
-                    (x, y), radius = cv2.minEnclosingCircle(cnt)
-                    # Rounds center of enclosing circle
-                    center = (int(x), int(y))
-                    # Rounds radius of enclosning circle
-                    radius = int(radius)
-                    # Makes bounding rectangle of contour
-                    rx, ry, rw, rh = cv2.boundingRect(cnt)
-                    boundingRect = cv2.boundingRect(cnt)
-                    # Draws countour of bounding rectangle and enclosing circle in green
-                    cv2.rectangle(image, (rx, ry), (rx + rw, ry + rh), (23, 184, 80), 1)
+        # Sort array based on coordinates (left to right) to make sure contours are adjacent
+        largest_contours.sort(key=lambda x: x[0])
 
-                    cv2.circle(image, center, radius, (23, 184, 80), 1)
-
-                    # Appends important info to array
-                    if [cx, cy, rotation, cnt] not in largest_contours:
-                         largest_contours.append([cx, cy, rotation, cnt])
-
-
-        # Sorts array based on coordinates (leftmost to rightmost) to make sure contours are adjacent
-        largest_contours = sorted(largest_contours, key=lambda x: x[0])
-        # Target Checking
+        # Find targets from contours
         for i in range(len(largest_contours) - 1):
-            #Rotation of two adjacent contours
+            # Rotation of two adjacent contours
             tilt1 = largest_contours[i][2]
             tilt2 = largest_contours[i + 1][2]
 
@@ -217,11 +202,6 @@ def find_targets(contours, image, centerX, centerY):
     return image
 
 
-# Checks if contours are worthy based off of contour area and (not currently) hull area
-def checkContours(cntSize, hullSize):
-    return cntSize > 1
-
-
 # Forgot how exactly it works, but it works!
 def translateRotation(rotation, width, height):
     if (width < height):
@@ -272,10 +252,10 @@ def calculatePitch(pixelY, centerY, vFocalLength):
     pitch *= -1
     return round(pitch)
 
-def getEllipseRotation(image, cnt):
+def getEllipseRotation(image, contour):
     try:
         # Gets rotated bounding ellipse of contour
-        ellipse = cv2.fitEllipse(cnt)
+        ellipse = cv2.fitEllipse(contour)
         centerE = ellipse[0]
         # Gets rotation of ellipse; same as rotation of contour
         rotation = ellipse[2]
@@ -295,7 +275,7 @@ def getEllipseRotation(image, cnt):
         return rotation
     except:
         # Gets rotated bounding rectangle of contour
-        rect = cv2.minAreaRect(cnt)
+        rect = cv2.minAreaRect(contour)
         # Creates box around that rectangle
         box = cv2.boxPoints(rect)
         # Not exactly sure

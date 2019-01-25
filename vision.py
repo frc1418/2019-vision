@@ -37,54 +37,56 @@ verticalView = math.atan(math.tan(diagonalView/2) * (verticalAspect / diagonalAs
 H_FOCAL_LENGTH = image_width / (2*math.tan((horizontalView/2)))
 V_FOCAL_LENGTH = image_height / (2*math.tan((verticalView/2)))
 
-# Masks the video based on a range of hsv colors
-# Takes in a frame, returns a masked frame
 def threshold_video(frame):
+    """
+    Calculate masked frame based on thresholding input video.
+    """
     img = frame.copy()
     blur = cv2.medianBlur(img, 5)
 
     # Convert BGR to HSV
     hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
-    # define range of red in HSV
+    # define HSV range to extract bright green features
     lower_color = np.array([50, 150,160])
     upper_color = np.array([100, 255, 255])
-    # hold the HSV image to get only red colors
+    # extract qualifying pixels from image
     mask = cv2.inRange(hsv, lower_color, upper_color)
-
-    # Returns the masked imageBlurs video to smooth out image
-
     return mask
 
 
-
-# Finds the contours from the masked image and displays them on original stream
 def findContours(frame, mask):
-    # Finds contours
+    """
+    Find contours of image mask, displaying them over original stream.
+    """
+    # Calculate contours
     _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
-    # Take each frame
-    # Gets the shape of video
+    print('Found %d contours initially.' % len(contours))
+    # Get frame resolution
     screenHeight, screenWidth, _ = frame.shape
-    # Gets center of height and width
+    # Calculate center of screen
     centerX = (screenWidth / 2) - .5
     centerY = (screenHeight / 2) - .5
-    # Copies frame and stores it in image
+    # Copy frame to image
     image = frame.copy()
-    # Processes the contours, takes in (contours, output_image, (centerOfImage) #TODO finding largest
-    print('Found %d contours initially.' % len(contours))
+    # Processes contours
     if len(contours) != 0:
         image = findTargets(contours, image, centerX, centerY)
-    # Shows the contours overlayed on the original video
+    # Return image of contours overlayed on original video
     return image
 
 
-
-# Draws Contours and finds center and yaw of vision targets
-# centerX is center x coordinate of image
-# centerY is center y coordinate of image
 def findTargets(contours, image, centerX, centerY):
+    """
+    Draw contours, calculating target angle.
+
+    :param contours: list of contours among which to find targets.
+    :param image: image upon which to draw contours.
+    :param centerX: x coordinate of image center.
+    :param centerY: y coordinate of image center.
+    """
     print('Searching for targets...')
-    screenHeight, screenWidth, channels = image.shape;
-    #Seen vision targets (correct angle, adjacent to each other)
+    screenHeight, screenWidth, _ = image.shape;
+    # List for storing found targets
     targets = []
 
     if len(contours) >= 2:
@@ -421,7 +423,7 @@ if __name__ == "__main__":
         print("Setting up NetworkTables server")
         ntinst.startServer()
     else:
-        print("Setting up NetworkTables client for team {}".format(team))
+        print("Setting up NetworkTables client")
         ntinst.startClientTeam(team)
 
     # start cameras

@@ -161,7 +161,7 @@ def find_targets(contours, image, center_x, center_y):
 
             # If contour angles are indeed opposite
             if (np.sign(tilt_left) != np.sign(tilt_right)):
-                target_center = math.floor((cx1 + cx2) / 2)
+                target_center = math.floor((cx_left + cx_right) / 2)
                 # Negative tilt -> Rotated to the right
                 # NOTE: if using rotated rect (min area rectangle), negative tilt means rotated to left
                 # If left contour rotation is tilted to the left then skip iteration

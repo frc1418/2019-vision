@@ -37,10 +37,6 @@ verticalView = math.atan(math.tan(diagonalView/2) * (verticalAspect / diagonalAs
 H_FOCAL_LENGTH = image_width / (2*math.tan((horizontalView/2)))
 V_FOCAL_LENGTH = image_height / (2*math.tan((verticalView/2)))
 
-# Flip image if camera mounted upside down
-def flipImage(frame):
-    return cv2.flip( frame, -1 )
-
 # Masks the video based on a range of hsv colors
 # Takes in a frame, returns a masked frame
 def threshold_video(frame):
@@ -451,7 +447,6 @@ if __name__ == "__main__":
         # in the source image.  If there is an error notify the output.
         timestamp, img = cvSink.grabFrame(img)
         frame = img
-        #frame = flipImage(img)
         if timestamp == 0:
             # Send the output the error.
             outputStream.notifyError(cvSink.getError());

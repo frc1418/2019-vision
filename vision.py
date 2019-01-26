@@ -55,7 +55,7 @@ def find_contours(frame, mask):
     """
     # Calculate contours
     _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
-    print('Found %d contours initially.' % len(contours))
+    print("Found %d contours initially." % len(contours))
     # Get frame resolution
     screenHeight, screenWidth, _ = frame.shape
     # Calculate center of screen
@@ -79,7 +79,6 @@ def find_targets(contours, image, center_x, center_y):
     :param center_x: x coordinate of image center.
     :param center_y: y coordinate of image center.
     """
-    print('Searching for targets...')
     screenHeight, screenWidth, _ = image.shape;
     # List for storing found targets
     targets = []
@@ -111,7 +110,6 @@ def find_targets(contours, image, center_x, center_y):
             yaw = calculate_yaw(cx, center_x, H_FOCAL_LENGTH)
             # Calculate pitch of contour (vertical position in degrees)
             pitch = calculate_pitch(cy, center_y, V_FOCAL_LENGTH)
-
 
             ### DRAW CONTOUR ###
             # Get rotated bounding rectangle of contour
@@ -199,7 +197,7 @@ def find_targets(contours, image, center_x, center_y):
 
 
 # Forgot how exactly it works, but it works!
-def translateRotation(rotation, width, height):
+def translate_rotation(rotation, width, height):
     if (width < height):
         rotation = -1 * (rotation - 90)
     if (rotation > 90):
@@ -208,11 +206,10 @@ def translateRotation(rotation, width, height):
     return round(rotation)
 
 
-def calculateDistance(camera_height, target_height, pitch):
-    height_difference = target_height - camera_height
+def calculate_distance(camera_height, target_height, pitch):
+    """
+    Use trig and pitch to find distance to target.
 
-    # Uses trig and pitch to find distance to target
-    '''
     d = distance
     h = height between camera and target
     a = angle = pitch
@@ -228,21 +225,31 @@ def calculateDistance(camera_height, target_height, pitch):
                      /a  |
               camera -----
                        d
-    '''
+
+    :param camera_height: height of camera from ground.
+    :param target_height: height of target from ground.
+    :param pitch: angle of camera.
+    """
+    height_difference = target_height - camera_height
     distance = math.fabs(height_difference / math.tan(math.radians(pitch)))
 
     return distance
 
 
-# Uses trig and focal length of camera to find yaw.
-# Link to further explanation: https://docs.google.com/presentation/d/1ediRsI-oR3-kwawFJZ34_ZTlQS2SDBLjZasjzZ-eXbQ/pub?start=false&loop=false&slide=id.g12c083cffa_0_298
 def calculate_yaw(pixel_x, center_x, h_focal_length) -> float:
+    """
+    Use trig and focal length of camera to find yaw.
+
+    Explanation: https://docs.google.com/presentation/d/1ediRsI-oR3-kwawFJZ34_ZTlQS2SDBLjZasjzZ-eXbQ/pub?start=false&loop=false&slide=id.g12c083cffa_0_298
+    """
     yaw = math.degrees(math.atan((pixel_x - center_x) / h_focal_length))
     return round(yaw)
 
 
-# Link to further explanation: https://docs.google.com/presentation/d/1ediRsI-oR3-kwawFJZ34_ZTlQS2SDBLjZasjzZ-eXbQ/pub?start=false&loop=false&slide=id.g12c083cffa_0_298
 def calculate_pitch(pixel_y, center_y, v_focal_length) -> float:
+    """
+    Explanation: https://docs.google.com/presentation/d/1ediRsI-oR3-kwawFJZ34_ZTlQS2SDBLjZasjzZ-eXbQ/pub?start=false&loop=false&slide=id.g12c083cffa_0_298
+    """
     pitch = math.degrees(math.atan((pixel_y - center_y) / v_focal_length))
     # Just stopped working have to do this:
     pitch *= -1
@@ -259,7 +266,7 @@ def getEllipseRotation(image, contour):
         widthE = ellipse[1][0]
         heightE = ellipse[1][1]
         # Maps rotation to (-90 to 90). Makes it easier to tell direction of slant
-        rotation = translateRotation(rotation, widthE, heightE)
+        rotation = translate_rotation(rotation, widthE, heightE)
 
         # Gets smaller side
         if widthE > heightE:
@@ -284,11 +291,11 @@ def getEllipseRotation(image, contour):
         width = rect[1][0]
         height = rect[1][1]
         # Maps rotation to (-90 to 90). Makes it easier to tell direction of slant
-        rotation = translateRotation(rotation, width, height)
+        rotation = translate_rotation(rotation, width, height)
         return rotation
 
 #################### FRC VISION PI Image Specific #############
-configFile = "/boot/frc.json"
+config_file = "/boot/frc.json"
 
 class CameraConfig: pass
 
@@ -296,12 +303,16 @@ team = None
 server = False
 cameraConfigs = []
 
-"""Report parse error."""
-def parseError(str):
-    print("config error in '" + configFile + "': " + str, file=sys.stderr)
+def parseError(message):
+    """
+    Cleanly report config parsing error.
+    """
+    print("config error in " + config_file + ": " + message, file=sys.stderr)
 
-"""Read single camera configuration."""
-def readCameraConfig(config):
+def read_camera_config(config):
+    """
+    Read single camera configuration.
+    """
     cam = CameraConfig()
 
     # name
@@ -315,7 +326,7 @@ def readCameraConfig(config):
     try:
         cam.path = config["path"]
     except KeyError:
-        parseError("camera '{}': could not read path".format(cam.name))
+        parseError("{}: could not read path".format(cam.name))
         return False
 
     cam.config = config
@@ -323,17 +334,19 @@ def readCameraConfig(config):
     cameraConfigs.append(cam)
     return True
 
-"""Read configuration file."""
-def readConfig():
+def read_config():
+    """
+    Read configuration file.
+    """
     global team
     global server
 
     # parse file
     try:
-        with open(configFile, "rt") as f:
+        with open(config_file, "rt") as f:
             j = json.load(f)
     except OSError as err:
-        print("could not open '{}': {}".format(configFile, err), file=sys.stderr)
+        print("could not open {}: {}".format(config_file, err), file=sys.stderr)
         return False
 
     # top level must be an object
@@ -361,13 +374,16 @@ def readConfig():
         parseError("could not read cameras")
         return False
     for camera in cameras:
-        if not readCameraConfig(camera):
+        if not read_camera_config(camera):
             return False
 
     return True
 
-"""Start running the camera."""
+
 def start_camera(config):
+    """
+    Begin running the camera.
+    """
     print("Starting camera '{}' on {}".format(config.name, config.path))
     cs = CameraServer.getInstance()
     camera = cs.startAutomaticCapture(name=config.name, path=config.path)
@@ -376,11 +392,12 @@ def start_camera(config):
 
     return cs, camera
 
+
 if __name__ == "__main__":
     if len(sys.argv) >= 2:
-        configFile = sys.argv[1]
+        config_file = sys.argv[1]
     # read configuration
-    if not readConfig():
+    if not read_config():
         sys.exit(1)
 
     # start NetworkTables and create table instance
@@ -422,10 +439,7 @@ if __name__ == "__main__":
             # skip the rest of the current iteration
             continue
 
-
         threshold = threshold_video(frame)
         processed = find_contours(frame, threshold)
         # (optional) send some image back to the dashboard
         outputStream.putFrame(processed)
-
-

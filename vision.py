@@ -118,7 +118,6 @@ def find_targets(contours, image, center_x, center_y):
             box = cv2.boxPoints(rect)
             box = np.int0(box)
 
-            # TODO: potentially decrease business of interface
             # Draw vertical white line passing through center of contour
             cv2.line(image, (cx, screenHeight), (cx, 0), (255, 255, 255))
             # Draw white circle at center of contour
@@ -170,26 +169,24 @@ def find_targets(contours, image, center_x, center_y):
                 # Angle from center of camera to target (what you should pass into gyro)
                 target_yaw = calculate_yaw(target_center, center_x, H_FOCAL_LENGTH)
 
-                #Push to NetworkTable
+                # Push to NetworkTable
                 table.putNumber("target_yaw", target_yaw)
 
-                #Make sure no duplicates, then append
+                # Make sure no duplicates, then append
                 if [target_center, target_yaw] not in targets:
                     targets.append([target_center, target_yaw])
-    #Check if there are targets seen
-    if (len(targets) > 0):
-        #Sorts targets based on x coords to break any angle tie
+    # Check if there are targets seen
+    if len(targets) > 0:
+        # Sort targets based on x coords to break any angle tie
         targets.sort(key=lambda x: math.fabs(x[0]))
-        finalTarget = min(targets, key=lambda x: math.fabs(x[1]))
-        # Puts the yaw on screen
-        #Draws yaw of target + line where center of target is
-        cv2.putText(image, "Yaw: " + str(finalTarget[1]), (40, 40), cv2.FONT_HERSHEY_COMPLEX, .6,
-                    (255, 255, 255))
-        cv2.line(image, (finalTarget[0], screenHeight), (finalTarget[0], 0), (255, 0, 0), 2)
+        final_target = min(targets, key=lambda x: math.fabs(x[1]))
+        # Draw yaw of target + line where center of target is
+        cv2.putText(image, "Yaw " + str(final_target[1]), (2, 2), cv2.FONT_HERSHEY_PLAIN, .6, (255, 255, 255))
+        cv2.line(image, (final_target[0], screenHeight), (finalTarget[0], 0), (255, 0, 0), 2)
 
-        currentAngleError = finalTarget[1]
+        current_angle_error = final_target[1]
 
-        table.putNumber("currentAngleError", currentAngleError)
+        table.putNumber("current_angle_error", current_angle_error)
 
     cv2.line(image, (round(center_x), screenHeight), (round(center_x), 0), (255, 255, 255), 2)
 

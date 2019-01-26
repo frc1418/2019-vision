@@ -13,7 +13,7 @@ import math
 
 # Lifecam 3000
 # Datasheet: https://dl2jx7zfbtwvr.cloudfront.net/specsheets/WEBC1010.pdf
-diagonal_view = math.radians(68.5)
+diagonal_fov = math.radians(68.5)
 
 # 16:9 aspect ratio
 horizontal_aspect = 16
@@ -25,8 +25,8 @@ image_height = 270
 # Reasons for using diagonal aspect is to calculate horizontal field of view.
 diagonal_aspect = math.hypot(horizontal_aspect, vertical_aspect)
 # Calculations: http://vrguy.blogspot.com/2013/04/converting-diagonal-field-of-view-and.html
-horizontal_view = math.atan(math.tan(diagonal_view/2) * (horizontal_aspect / diagonal_aspect)) * 2
-vertical_view = math.atan(math.tan(diagonal_view/2) * (vertical_aspect / diagonal_aspect)) * 2
+horizontal_view = math.atan(math.tan(diagonal_fov/2) * (horizontal_aspect / diagonal_aspect)) * 2
+vertical_view = math.atan(math.tan(diagonal_fov/2) * (vertical_aspect / diagonal_aspect)) * 2
 
 # Focal Length calculations: https://docs.google.com/presentation/d/1ediRsI-oR3-kwawFJZ34_ZTlQS2SDBLjZasjzZ-eXbQ/pub?start=false&loop=false&slide=id.g12c083cffa_0_165
 H_FOCAL_LENGTH = image_width / (2*math.tan((horizontal_view/2)))
@@ -207,8 +207,8 @@ def translateRotation(rotation, width, height):
     return round(rotation)
 
 
-def calculateDistance(heightOfCamera, heightOfTarget, pitch):
-    heightOfTargetFromCamera = heightOfTarget - heightOfCamera
+def calculateDistance(camera_height, target_height, pitch):
+    height_difference = target_height - camera_height
 
     # Uses trig and pitch to find distance to target
     '''
@@ -228,7 +228,7 @@ def calculateDistance(heightOfCamera, heightOfTarget, pitch):
               camera -----
                        d
     '''
-    distance = math.fabs(heightOfCameraFromTarget / math.tan(math.radians(pitch)))
+    distance = math.fabs(height_difference / math.tan(math.radians(pitch)))
 
     return distance
 

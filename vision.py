@@ -240,7 +240,7 @@ def calculate_yaw(pixel_x, center_x, h_focal_length) -> float:
     Explanation: https://docs.google.com/presentation/d/1ediRsI-oR3-kwawFJZ34_ZTlQS2SDBLjZasjzZ-eXbQ/pub?start=false&loop=false&slide=id.g12c083cffa_0_298
     """
     yaw = math.degrees(math.atan((pixel_x - center_x) / h_focal_length))
-    return round(yaw)
+    return yaw
 
 
 def calculate_pitch(pixel_y, center_y, v_focal_length) -> float:
@@ -250,7 +250,7 @@ def calculate_pitch(pixel_y, center_y, v_focal_length) -> float:
     pitch = math.degrees(math.atan((pixel_y - center_y) / v_focal_length))
     # Just stopped working have to do this:
     pitch *= -1
-    return round(pitch)
+    return pitch
 
 def getEllipseRotation(image, contour):
     try:

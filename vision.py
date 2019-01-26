@@ -182,7 +182,7 @@ def find_targets(contours, image, center_x, center_y):
         targets.sort(key=lambda x: math.fabs(x[0]))
         final_target = min(targets, key=lambda x: math.fabs(x[1]))
         # Draw yaw of target + line where center of target is
-        cv2.putText(image, "Yaw " + str(final_target[1]), (2, 2), cv2.FONT_HERSHEY_PLAIN, .6, (255, 255, 255))
+        cv2.putText(image, "Yaw: " + str(final_target[1]), (1, 8), cv2.FONT_HERSHEY_PLAIN, .6, (255, 255, 255))
         cv2.line(image, (final_target[0], screenHeight), (final_target[0], 0), (255, 0, 0), 2)
 
         current_angle_error = final_target[1]

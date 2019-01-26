@@ -118,8 +118,6 @@ def find_targets(contours, image, center_x, center_y):
                 # Create box around that rectangle
                 box = cv2.boxPoints(rect)
                 box = np.int0(box)
-                # Draw rotated rectangle
-                cv2.drawContours(image, [box], 0, (23, 184, 80), 3)
 
                 # TODO: potentially decrease business of interface
                 # Draw vertical white line passing through center of contour
@@ -138,8 +136,6 @@ def find_targets(contours, image, center_x, center_y):
                 # Calculate then draw bounding rectangle of contour
                 rx, ry, rw, rh = cv2.boundingRect(contour)
                 cv2.rectangle(image, (rx, ry), (rx + rw, ry + rh), (23, 184, 80), 1)
-
-                cv2.circle(image, center, radius, (23, 184, 80), 1)
 
                 # Append important info to array
                 largest_contours.append([cx, cy, rotation, contour])

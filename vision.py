@@ -177,6 +177,7 @@ def find_targets(contours, image, center_x, center_y):
                     targets.append([target_center, target_yaw])
     # Check if there are targets seen
     if len(targets) > 0:
+        table.putBoolean("target_seen", True)
         # Sort targets based on x coords to break any angle tie
         targets.sort(key=lambda x: math.fabs(x[0]))
         final_target = min(targets, key=lambda x: math.fabs(x[1]))
@@ -426,6 +427,7 @@ if __name__ == "__main__":
 
     # loop forever
     while True:
+        table.putBoolean("target_seen", False)
         # Tell the CvSink to grab a frame from the camera and put it
         # in the source image.  If there is an error notify the output.
         timestamp, img = cvSink.grabFrame(img)

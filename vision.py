@@ -103,42 +103,43 @@ def find_targets(contours, image, center_x, center_y):
                 cy = int(moments["m01"] / moments["m00"])
             else:
                 cx, cy = 0, 0
-            if len(largest_contours) < 13:
-                ### CALCULATE CONTOUR ROTATION BY FITTING ELLIPSE ###
-                rotation = getEllipseRotation(image, contour)
 
-                # Calculate yaw of contour (horizontal position in degrees)
-                yaw = calculateYaw(cx, center_x, H_FOCAL_LENGTH)
-                # Calculate pitch of contour (vertical position in degrees)
-                pitch = calculatePitch(cy, center_y, V_FOCAL_LENGTH)
+            ### CALCULATE CONTOUR ROTATION BY FITTING ELLIPSE ###
+            rotation = getEllipseRotation(image, contour)
 
-                ### DRAW CONTOUR ###
-                # Get rotated bounding rectangle of contour
-                rect = cv2.minAreaRect(contour)
-                # Create box around that rectangle
-                box = cv2.boxPoints(rect)
-                box = np.int0(box)
+            # Calculate yaw of contour (horizontal position in degrees)
+            yaw = calculate_yaw(cx, center_x, H_FOCAL_LENGTH)
+            # Calculate pitch of contour (vertical position in degrees)
+            pitch = calculate_pitch(cy, center_y, V_FOCAL_LENGTH)
 
-                # TODO: potentially decrease business of interface
-                # Draw vertical white line passing through center of contour
-                cv2.line(image, (cx, screenHeight), (cx, 0), (255, 255, 255))
-                # Draw white circle at center of contour
-                cv2.circle(image, (cx, cy), 6, (255, 255, 255))
 
-                # Draw contours
-                cv2.drawContours(image, [contour], 0, (23, 184, 80), 1)
+            ### DRAW CONTOUR ###
+            # Get rotated bounding rectangle of contour
+            rect = cv2.minAreaRect(contour)
+            # Create box around that rectangle
+            box = cv2.boxPoints(rect)
+            box = np.int0(box)
 
-                # Get coordinates and radius of contour's enclosing circle
-                (x, y), radius = cv2.minEnclosingCircle(contour)
-                # Round coordinates and radius
-                center = (int(x), int(y))
-                radius = int(radius)
-                # Calculate then draw bounding rectangle of contour
-                rx, ry, rw, rh = cv2.boundingRect(contour)
-                cv2.rectangle(image, (rx, ry), (rx + rw, ry + rh), (23, 184, 80), 1)
+            # TODO: potentially decrease business of interface
+            # Draw vertical white line passing through center of contour
+            cv2.line(image, (cx, screenHeight), (cx, 0), (255, 255, 255))
+            # Draw white circle at center of contour
+            cv2.circle(image, (cx, cy), 6, (255, 255, 255))
 
-                # Append important info to array
-                largest_contours.append([cx, cy, rotation, contour])
+            # Draw contours
+            cv2.drawContours(image, [contour], 0, (23, 184, 80), 1)
+
+            # Get coordinates and radius of contour's enclosing circle
+            (x, y), radius = cv2.minEnclosingCircle(contour)
+            # Round coordinates and radius
+            center = (int(x), int(y))
+            radius = int(radius)
+            # Calculate then draw bounding rectangle of contour
+            rx, ry, rw, rh = cv2.boundingRect(contour)
+            cv2.rectangle(image, (rx, ry), (rx + rw, ry + rh), (23, 184, 80), 1)
+
+            # Append important info to array
+            largest_contours.append([cx, cy, rotation, contour])
 
         # Sort array based on coordinates (left to right) to make sure contours are adjacent
         largest_contours.sort(key=lambda x: x[0])
@@ -169,7 +170,7 @@ def find_targets(contours, image, center_x, center_y):
                     if (cx_right < cx_left):
                         continue
                 # Angle from center of camera to target (what you should pass into gyro)
-                target_yaw = calculateYaw(target_center, center_x, H_FOCAL_LENGTH)
+                target_yaw = calculate_yaw(target_center, center_x, H_FOCAL_LENGTH)
 
                 #Push to NetworkTable
                 table.putNumber("target_yaw", target_yaw)
@@ -235,13 +236,13 @@ def calculateDistance(camera_height, target_height, pitch):
 
 # Uses trig and focal length of camera to find yaw.
 # Link to further explanation: https://docs.google.com/presentation/d/1ediRsI-oR3-kwawFJZ34_ZTlQS2SDBLjZasjzZ-eXbQ/pub?start=false&loop=false&slide=id.g12c083cffa_0_298
-def calculateYaw(pixel_x, center_x, h_focal_length):
+def calculate_yaw(pixel_x, center_x, h_focal_length) -> float:
     yaw = math.degrees(math.atan((pixel_x - center_x) / h_focal_length))
     return round(yaw)
 
 
 # Link to further explanation: https://docs.google.com/presentation/d/1ediRsI-oR3-kwawFJZ34_ZTlQS2SDBLjZasjzZ-eXbQ/pub?start=false&loop=false&slide=id.g12c083cffa_0_298
-def calculatePitch(pixel_y, center_y, v_focal_length):
+def calculate_pitch(pixel_y, center_y, v_focal_length) -> float:
     pitch = math.degrees(math.atan((pixel_y - center_y) / v_focal_length))
     # Just stopped working have to do this:
     pitch *= -1

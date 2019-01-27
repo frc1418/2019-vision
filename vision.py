@@ -158,9 +158,6 @@ def find_targets(contours, image):
 
         target_yaw = calculate_yaw(nearest_target["center"], center_x)
         table.putNumber("target_yaw", target_yaw)
-        current_angle_error = nearest_target["yaw"]
-
-        table.putNumber("current_angle_error", current_angle_error)
 
     cv2.line(image, (round(center_x), screen_height), (round(center_x), 0), (255, 255, 255), 1)
 

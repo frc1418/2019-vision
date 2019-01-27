@@ -175,8 +175,7 @@ def find_targets(contours, image, center_x, center_y):
                 table.putNumber("target_yaw", target_yaw)
 
                 # Make sure no duplicates, then append
-                if [target_center, target_yaw] not in targets:
-                    targets.append([target_center, target_yaw])
+                targets.append([target_center, target_yaw])
     # Check if there are targets seen
     if len(targets) > 0:
         table.putBoolean("target_seen", True)

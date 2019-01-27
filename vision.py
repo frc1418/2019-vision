@@ -132,12 +132,15 @@ def find_targets(contours, frame):
             if (np.sign(tilt_left) != np.sign(tilt_right) and
                     not (tilt_left > 0 and cx_left < cx_right or tilt_right > 0 and cx_right < cx_left)):
 
-                target_yaw = calculate_yaw(nearest_target["cx"], center_x)
-                target_pitch = calculate_pitch(nearest_target["cy"], center_y)
+                target_cx = (cx_left + cx_right) / 2
+                target_cy = (cy_left + cy_right) / 2
+
+                target_yaw = calculate_yaw(target_cx, center_x)
+                target_pitch = calculate_pitch(target_cy, center_y)
                 target_distance = calculate_distance(target_pitch)
 
-                targets.append({"cx": (cx_left + cx_right) / 2,
-                                "cy": (cy_left + cy_right) / 2,
+                targets.append({"cx": target_cx,
+                                "cy": target_cy,
                                 "yaw": target_yaw,
                                 "pitch": target_pitch,
                                 "distance": target_distance})

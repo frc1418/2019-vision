@@ -34,7 +34,7 @@ V_FOCAL_LENGTH = IMAGE_HEIGHT / (2 * math.tan(VERTICAL_FOV / 2))
 
 MIN_CONTOUR_SIZE = 3
 
-def threshold_video(frame):
+def threshold_frame(frame):
     """
     Calculate masked frame based on thresholding input video.
     """
@@ -379,13 +379,13 @@ if __name__ == "__main__":
         cs, cameraCapture = start_camera(cameraConfig)
         streams.append(cs)
         cameras.append(cameraCapture)
-    #Get the first camera
-    cameraServer = streams[0]
+    # Get the first camera
+    camera_server = streams[0]
     # Get a CvSink. This will capture images from the camera
-    cvSink = cameraServer.getVideo()
+    cv_sink = camera_server.getVideo()
 
     # (optional) Setup a CvSource. This will send images back to the Dashboard
-    outputStream = cameraServer.putVideo("stream", IMAGE_WIDTH, IMAGE_HEIGHT)
+    output_stream = camera_server.putVideo("stream", IMAGE_WIDTH, IMAGE_HEIGHT)
     # Allocating new images is very expensive, always try to preallocate
     img = np.zeros(shape=(IMAGE_HEIGHT, IMAGE_WIDTH, 3), dtype=np.uint8)
 
@@ -393,18 +393,22 @@ if __name__ == "__main__":
     while True:
         table.putBoolean("target_present", False)
         table.putNumber("targets_seen", 0)
+        table.putNumber("target_yaw", 0)
+        table.putNumber("target_pitch", 0)
+        table.putNumber("target_distance", 0)
 
         # Tell the CvSink to grab a frame from the camera and put it
         # in the source image.  If there is an error notify the output.
-        timestamp, img = cvSink.grabFrame(img)
+        # TODO: Why can't we just use frame for everything?
+        timestamp, img = cv_sink.grabFrame(img)
         frame = img
         if timestamp == 0:
             # Send the output the error.
-            outputStream.notifyError(cvSink.getError());
-            # skip the rest of the current iteration
+            output_stream.notifyError(cv_sink.getError());
+            # Skip the rest of the current iteration
             continue
 
-        threshold = threshold_video(frame)
-        processed = find_contours(frame, threshold)
-        # (optional) send some image back to the dashboard
-        outputStream.putFrame(processed)
+        mask = threshold_frame(frame)
+        processed = find_contours(frame, mask)
+        # (optional) send image back to the dashboard
+        output_stream.putFrame(processed)

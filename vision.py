@@ -115,22 +115,22 @@ def find_targets(contours, image):
             cv2.drawContours(image, [contour], 0, (0, 200, 0), 1)
 
             # Append important info to array
-            largest_contours.append({'cx': cx, 'cy': cy, 'rotation': rotation, 'contour': contour})
+            largest_contours.append({"cx": cx, "cy": cy, "rotation": rotation, "contour": contour})
 
         # Sort array based on coordinates (left to right) to make sure contours are adjacent
-        largest_contours.sort(key=lambda contour: contour['cx'])
+        largest_contours.sort(key=lambda contour: contour["cx"])
 
         # Find targets from contours
         for i in range(len(largest_contours) - 1):
             # Check rotation of adjacent contours
-            tilt_left = largest_contours[i]['rotation']
-            tilt_right = largest_contours[i + 1]['rotation']
+            tilt_left = largest_contours[i]["rotation"]
+            tilt_right = largest_contours[i + 1]["rotation"]
 
             # Contour coordinates
-            cx_left = largest_contours[i]['cx']
-            cx_right = largest_contours[i + 1]['cx']
-            cy_left = largest_contours[i]['cy']
-            cy_right = largest_contours[i + 1]['cy']
+            cx_left = largest_contours[i]["cx"]
+            cx_right = largest_contours[i + 1]["cx"]
+            cy_left = largest_contours[i]["cy"]
+            cy_right = largest_contours[i + 1]["cy"]
 
             # If contour angles are opposite
             # Negative tilt -> Rotated to the right
@@ -143,16 +143,16 @@ def find_targets(contours, image):
                 target_center = (cx_left + cx_right) / 2
 
                 # Make sure no duplicates, then append
-                targets.append({'center': target_center, 'yaw': target_yaw})
+                targets.append({"center": target_center, "yaw": target_yaw})
 
     # Check if there are targets seen
     if len(targets) > 0:
         table.putBoolean("target_present", True)
         table.putNumber("targets_seen", len(targets))
         # Get target with smallest yaw
-        nearest_target = min(targets, key=lambda target: math.fabs(target['yaw']))
+        nearest_target = min(targets, key=lambda target: math.fabs(target["yaw"]))
         # Draw yaw of target
-        cv2.putText(image, "Yaw: %.3f" % nearest_target['yaw'], (1, 8), cv2.FONT_HERSHEY_PLAIN, .6, (255, 255, 255))
+        cv2.putText(image, "Yaw: %.3f" % nearest_target["yaw"], (1, 8), cv2.FONT_HERSHEY_PLAIN, .6, (255, 255, 255))
         # Draw central line
         cv2.line(image, (nearest_target["center"], screen_height), (nearest_target["center"], 0), (255, 0, 0), 1)
 
@@ -350,7 +350,7 @@ def start_camera(config):
     """
     Begin running the camera.
     """
-    print("Starting camera '{}' on {}".format(config.name, config.path))
+    print("Starting {} on {}".format(config.name, config.path))
     cs = CameraServer.getInstance()
     camera = cs.startAutomaticCapture(name=config.name, path=config.path)
 

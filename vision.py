@@ -32,6 +32,8 @@ vertical_view = math.atan(math.tan(diagonal_fov/2) * (vertical_aspect / diagonal
 H_FOCAL_LENGTH = image_width / (2*math.tan((horizontal_view/2)))
 V_FOCAL_LENGTH = image_height / (2*math.tan((vertical_view/2)))
 
+MIN_CONTOUR_SIZE = 3
+
 def threshold_video(frame):
     """
     Calculate masked frame based on thresholding input video.
@@ -89,33 +91,34 @@ def find_targets(contours, image):
         for contour in contours:
             # Calculate areas of contour
             contour_area = cv2.contourArea(contour)
-            # Get moments of contour for centroid calculations
-            moments = cv2.moments(contour)
-            # Find centroid of contour
-            if moments["m00"] != 0:
-                cx = int(moments["m10"] / moments["m00"])
-                cy = int(moments["m01"] / moments["m00"])
-            else:
-                cx, cy = 0, 0
+            if contour_area >= MIN_CONTOUR_SIZE:
+                # Get moments of contour for centroid calculations
+                moments = cv2.moments(contour)
+                # Find centroid of contour
+                if moments["m00"] != 0:
+                    cx = int(moments["m10"] / moments["m00"])
+                    cy = int(moments["m01"] / moments["m00"])
+                else:
+                    cx, cy = 0, 0
 
-            ### CALCULATE CONTOUR ROTATION BY FITTING ELLIPSE ###
-            rotation = get_ellipse_rotation(image, contour)
+                ### CALCULATE CONTOUR ROTATION BY FITTING ELLIPSE ###
+                rotation = get_ellipse_rotation(image, contour)
 
-            ### DRAW CONTOUR ###
-            # Get rotated bounding rectangle of contour
-            rect = cv2.minAreaRect(contour)
-            # Create box around that rectangle
-            box = cv2.boxPoints(rect)
-            box = np.int0(box)
+                ### DRAW CONTOUR ###
+                # Get rotated bounding rectangle of contour
+                rect = cv2.minAreaRect(contour)
+                # Create box around that rectangle
+                box = cv2.boxPoints(rect)
+                box = np.int0(box)
 
-            # Draw white circle at center of contour
-            cv2.circle(image, (cx, cy), 6, (255, 255, 255))
+                # Draw white circle at center of contour
+                cv2.circle(image, (cx, cy), 6, (255, 255, 255))
 
-            # Draw contour in green
-            cv2.drawContours(image, [contour], 0, (0, 200, 0), 1)
+                # Draw contour in green
+                cv2.drawContours(image, [contour], 0, (0, 200, 0), 1)
 
-            # Append important info to array
-            largest_contours.append({"cx": cx, "cy": cy, "rotation": rotation, "contour": contour})
+                # Append important info to array
+                largest_contours.append({"cx": cx, "cy": cy, "rotation": rotation, "contour": contour})
 
         # Sort array based on coordinates (left to right) to make sure contours are adjacent
         largest_contours.sort(key=lambda contour: contour["cx"])

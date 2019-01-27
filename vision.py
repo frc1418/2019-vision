@@ -141,8 +141,6 @@ def find_targets(contours, image):
                     not (tilt_left > 0 and cx_left < cx_right or tilt_right > 0 and cx_right < cx_left)):
 
                 target_center = (cx_left + cx_right) / 2
-
-                # Make sure no duplicates, then append
                 targets.append({"center": target_center})
 
     # Check if there are targets seen
@@ -151,15 +149,16 @@ def find_targets(contours, image):
         table.putNumber("targets_seen", len(targets))
         # Get target with smallest yaw
         nearest_target = min(targets, key=lambda target: math.fabs(target["yaw"]))
-        # Draw yaw of target
-        cv2.putText(image, "Yaw: %.3f" % nearest_target["yaw"], (1, 8), cv2.FONT_HERSHEY_PLAIN, .6, (255, 255, 255))
-        # Draw central line
+        # Write yaw of target in corner of image
+        cv2.putText(image, "Yaw: %.3f" % nearest_target["yaw"], (1, 8), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255))
+        # Draw line at center of target
         cv2.line(image, (nearest_target["center"], screen_height), (nearest_target["center"], 0), (255, 0, 0), 1)
 
         target_yaw = calculate_yaw(nearest_target["center"], center_x)
         table.putNumber("target_yaw", target_yaw)
 
-    cv2.line(image, (round(center_x), screen_height), (round(center_x), 0), (255, 255, 255), 1)
+        # Draw line at center of screen
+        cv2.line(image, (round(center_x), screen_height), (round(center_x), 0), (255, 255, 255), 1)
 
     return image
 

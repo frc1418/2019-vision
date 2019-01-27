@@ -141,11 +141,6 @@ def find_targets(contours, image):
                     not (tilt_left > 0 and cx_left < cx_right or tilt_right > 0 and cx_right < cx_left)):
 
                 target_center = (cx_left + cx_right) / 2
-                # Angle from center of camera to target (what you should pass into gyro)
-                target_yaw = calculate_yaw(target_center, center_x)
-
-                # Push to NetworkTable
-                table.putNumber("target_yaw", target_yaw)
 
                 # Make sure no duplicates, then append
                 targets.append({'center': target_center, 'yaw': target_yaw})
@@ -159,9 +154,11 @@ def find_targets(contours, image):
         # Draw yaw of target
         cv2.putText(image, "Yaw: %.3f" % nearest_target['yaw'], (1, 8), cv2.FONT_HERSHEY_PLAIN, .6, (255, 255, 255))
         # Draw central line
-        cv2.line(image, (nearest_target[0], screen_height), (nearest_target["center"], 0), (255, 0, 0), 1)
+        cv2.line(image, (nearest_target["center"], screen_height), (nearest_target["center"], 0), (255, 0, 0), 1)
 
-        current_angle_error = nearest_target[1]
+        target_yaw = calculate_yaw(nearest_target["center"], center_x)
+        table.putNumber("target_yaw", target_yaw)
+        current_angle_error = nearest_target["yaw"]
 
         table.putNumber("current_angle_error", current_angle_error)
 

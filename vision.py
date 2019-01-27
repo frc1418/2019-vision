@@ -137,8 +137,8 @@ def find_targets(contours, image):
             if (np.sign(tilt_left) != np.sign(tilt_right) and
                     not (tilt_left > 0 and cx_left < cx_right or tilt_right > 0 and cx_right < cx_left)):
 
-                target_center = (cx_left + cx_right) / 2
-                targets.append({"center": target_center})
+                targets.append({"cx": (cx_left + cx_right) / 2,
+                                "cy": (cy_left + cy_right) / 2})
 
     # Check if there are targets seen
     if len(targets) > 0:
@@ -149,10 +149,12 @@ def find_targets(contours, image):
         # Write yaw of target in corner of image
         cv2.putText(image, "Yaw: %.3f" % nearest_target["yaw"], (1, 8), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255))
         # Draw line at center of target
-        cv2.line(image, (nearest_target["center"], screen_height), (nearest_target["center"], 0), (255, 0, 0), 1)
+        cv2.line(image, (nearest_target["cx"], screen_height), (nearest_target["cx"], 0), (255, 0, 0), 1)
 
-        target_yaw = calculate_yaw(nearest_target["center"], center_x)
+        target_yaw = calculate_yaw(nearest_target["cx"], center_x)
         table.putNumber("target_yaw", target_yaw)
+        target_pitch = calculate_pitch(nearest_target["cy"], center_y)
+        table.putNumber("target_pitch", target_pitch)
 
         # Draw line at center of screen
         cv2.line(image, (round(center_x), screen_height), (round(center_x), 0), (255, 255, 255), 1)

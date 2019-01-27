@@ -41,12 +41,12 @@ def threshold_frame(frame):
     img = frame.copy()
     blur = cv2.medianBlur(img, 3)
 
-    # Convert BGR to HSV
+    # Get image in HSV colorspace
     hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
-    # define HSV range to extract bright green features
+    # Define HSV range of bright green features
     lower_threshold = np.array([50, 150, 120])
     upper_threshold = np.array([100, 255, 255])
-    # extract qualifying pixels from image
+    # Extract qualifying pixels from image
     mask = cv2.inRange(hsv, lower_threshold, upper_threshold)
     return mask
 
@@ -91,9 +91,8 @@ def find_targets(contours, frame):
                 moments = cv2.moments(contour)
                 # Find centroid of contour
                 if moments["m00"] != 0:
-                    # TODO: Wouldn't this work better if we allow it to continue being float?
-                    cx = moments["m10"] // moments["m00"]
-                    cy = moments["m01"] // moments["m00"]
+                    cx = int(moments["m10"] / moments["m00"])
+                    cy = int(moments["m01"] / moments["m00"])
                 else:
                     cx, cy = 0, 0
 
@@ -133,8 +132,15 @@ def find_targets(contours, frame):
             if (np.sign(tilt_left) != np.sign(tilt_right) and
                     not (tilt_left > 0 and cx_left < cx_right or tilt_right > 0 and cx_right < cx_left)):
 
+                target_yaw = calculate_yaw(nearest_target["cx"], center_x)
+                target_pitch = calculate_pitch(nearest_target["cy"], center_y)
+                target_distance = calculate_distance(target_pitch)
+
                 targets.append({"cx": (cx_left + cx_right) / 2,
-                                "cy": (cy_left + cy_right) / 2})
+                                "cy": (cy_left + cy_right) / 2,
+                                "yaw": target_yaw,
+                                "pitch": target_pitch,
+                                "distance": target_distance})
 
     # Check if there are targets seen
     if len(targets) > 0:
@@ -147,15 +153,12 @@ def find_targets(contours, frame):
         # Draw line at center of screen
         cv2.line(image, (round(center_x), screen_height), (round(center_x), 0), (255, 255, 255), 1)
 
-        target_yaw = calculate_yaw(nearest_target["cx"], center_x)
-        target_pitch = calculate_pitch(nearest_target["cy"], center_y)
-        target_distance = calculate_distance(target_pitch)
         # Send our final data to NetworkTables
         table.putBoolean("target_present", True)
         table.putNumber("targets_seen", len(targets))
-        table.putNumber("target_yaw", target_yaw)
-        table.putNumber("target_pitch", target_pitch)
-        table.putNumber("target_distance", target_distance)
+        table.putNumber("target_yaw", nearest_target["yaw"])
+        table.putNumber("target_pitch", nearest_target["pitch"])
+        table.putNumber("target_distance", nearest_target["distance"])
 
     return image
 

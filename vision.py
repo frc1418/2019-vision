@@ -149,12 +149,13 @@ def find_targets(contours, frame):
 
         target_yaw = calculate_yaw(nearest_target["cx"], center_x)
         target_pitch = calculate_pitch(nearest_target["cy"], center_y)
-        target_distance = calculate_distance(
+        target_distance = calculate_distance(target_pitch)
         # Send our final data to NetworkTables
         table.putBoolean("target_present", True)
         table.putNumber("targets_seen", len(targets))
         table.putNumber("target_yaw", target_yaw)
         table.putNumber("target_pitch", target_pitch)
+        table.putNumber("target_distance", target_distance)
 
     return image
 
@@ -169,7 +170,7 @@ def translate_rotation(rotation, width, height):
     return round(rotation)
 
 
-def calculate_distance(camera_height, target_height, pitch):
+def calculate_distance(pitch):
     """
     Use trig and pitch to find distance to target.
 
@@ -193,6 +194,9 @@ def calculate_distance(camera_height, target_height, pitch):
     :param target_height: height of target from ground.
     :param pitch: angle of camera.
     """
+    # TODO: Use actual values calculated
+    target_height = 60
+    camera_height = 40
     height_difference = target_height - camera_height
     distance = math.fabs(height_difference / math.tan(math.radians(pitch)))
 

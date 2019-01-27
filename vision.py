@@ -57,10 +57,10 @@ def find_contours(frame, mask):
     _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
     print("Found %d contours initially." % len(contours))
     # Get frame resolution
-    screenHeight, screenWidth, _ = frame.shape
+    screen_height, screen_width, _ = frame.shape
     # Calculate center of screen
-    center_x = (screenWidth / 2) - .5
-    center_y = (screenHeight / 2) - .5
+    center_x = (screen_width / 2) - .5
+    center_y = (screen_height / 2) - .5
     # Copy frame to image
     image = frame.copy()
     # Processes contours
@@ -79,7 +79,7 @@ def find_targets(contours, image, center_x, center_y):
     :param center_x: x coordinate of image center.
     :param center_y: y coordinate of image center.
     """
-    screenHeight, screenWidth, _ = image.shape;
+    screen_height, screen_width, _ = image.shape;
     # List for storing found targets
     targets = []
 
@@ -89,11 +89,8 @@ def find_targets(contours, image, center_x, center_y):
 
         largest_contours = []
         for contour in contours:
-            # Get convex hull (bounding polygon on contour)
-            hull = cv2.convexHull(contour)
-            # Calculate areas of contour and hull
+            # Calculate areas of contour
             contour_area = cv2.contourArea(contour)
-            hull_area = cv2.contourArea(hull)
             # Get moments of contour for centroid calculations
             moments = cv2.moments(contour)
             # Find centeroids of contour
@@ -154,23 +151,23 @@ def find_targets(contours, image, center_x, center_y):
 
                 # Make sure no duplicates, then append
                 targets.append([target_center, target_yaw])
+
     # Check if there are targets seen
     if len(targets) > 0:
         table.putBoolean("target_present", True)
         table.putNumber("targets_seen", len(targets))
-        # Sort targets based on x coords to break any angle tie
-        targets.sort(key=lambda target: math.fabs(target[0]))
-        final_target = min(targets, key=lambda x: math.fabs(x[1]))
-        # Draw yaw of target + line where center of target is
-        cv2.putText(image, "Yaw: " + str(final_target[1]), (1, 8), cv2.FONT_HERSHEY_PLAIN, .6, (255, 255, 255))
+        # Get target with smallest yaw
+        nearest_target = min(targets, key=lambda target: math.fabs(target[1]))
+        # Draw yaw of target
+        cv2.putText(image, "Yaw: %.3f" % nearest_target[1], (1, 8), cv2.FONT_HERSHEY_PLAIN, .6, (255, 255, 255))
         # Draw central line
-        cv2.line(image, (final_target[0], screenHeight), (final_target[0], 0), (255, 0, 0), 1)
+        cv2.line(image, (nearest_target[0], screen_height), (nearest_target[0], 0), (255, 0, 0), 1)
 
-        current_angle_error = final_target[1]
+        current_angle_error = nearest_target[1]
 
         table.putNumber("current_angle_error", current_angle_error)
 
-    cv2.line(image, (round(center_x), screenHeight), (round(center_x), 0), (255, 255, 255), 1)
+    cv2.line(image, (round(center_x), screen_height), (round(center_x), 0), (255, 255, 255), 1)
 
     return image
 

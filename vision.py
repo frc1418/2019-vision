@@ -116,11 +116,8 @@ def find_targets(contours, image, center_x, center_y):
             # Draw white circle at center of contour
             cv2.circle(image, (cx, cy), 6, (255, 255, 255))
 
-            # Draw contours
-            cv2.drawContours(image, [contour], 0, (23, 184, 80), 1)
-
-            # Get coordinates and radius of contour's enclosing circle
-            (x, y), radius = cv2.minEnclosingCircle(contour)
+            # Draw contour in green
+            cv2.drawContours(image, [contour], 0, (0, 200, 0), 1)
 
             # Append important info to array
             largest_contours.append([cx, cy, rotation, contour])
@@ -165,13 +162,13 @@ def find_targets(contours, image, center_x, center_y):
         final_target = min(targets, key=lambda x: math.fabs(x[1]))
         # Draw yaw of target + line where center of target is
         cv2.putText(image, "Yaw: " + str(final_target[1]), (1, 8), cv2.FONT_HERSHEY_PLAIN, .6, (255, 255, 255))
-        cv2.line(image, (final_target[0], screenHeight), (final_target[0], 0), (255, 0, 0), 2)
+        cv2.line(image, (final_target[0], screenHeight), (final_target[0], 0), (255, 0, 0), 1)
 
         current_angle_error = final_target[1]
 
         table.putNumber("current_angle_error", current_angle_error)
 
-    cv2.line(image, (round(center_x), screenHeight), (round(center_x), 0), (255, 255, 255), 2)
+    cv2.line(image, (round(center_x), screenHeight), (round(center_x), 0), (255, 255, 255), 1)
 
     return image
 

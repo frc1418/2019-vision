@@ -142,22 +142,19 @@ def find_targets(contours, image):
 
     # Check if there are targets seen
     if len(targets) > 0:
-        table.putBoolean("target_present", True)
-        table.putNumber("targets_seen", len(targets))
         # Get target with smallest yaw
         nearest_target = min(targets, key=lambda target: math.fabs(target["yaw"]))
         # Write yaw of target in corner of image
         cv2.putText(image, "Yaw: %.3f" % nearest_target["yaw"], (1, 8), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255))
         # Draw line at center of target
         cv2.line(image, (nearest_target["cx"], screen_height), (nearest_target["cx"], 0), (255, 0, 0), 1)
-
-        target_yaw = calculate_yaw(nearest_target["cx"], center_x)
-        table.putNumber("target_yaw", target_yaw)
-        target_pitch = calculate_pitch(nearest_target["cy"], center_y)
-        table.putNumber("target_pitch", target_pitch)
-
         # Draw line at center of screen
         cv2.line(image, (round(center_x), screen_height), (round(center_x), 0), (255, 255, 255), 1)
+
+        table.putBoolean("target_present", True)
+        table.putNumber("targets_seen", len(targets))
+        table.putNumber("target_yaw", calculate_yaw(nearest_target["cx"], center_x))
+        table.putNumber("target_pitch", calculate_pitch(nearest_target["cy"], center_y))
 
     return image
 

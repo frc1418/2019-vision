@@ -42,7 +42,7 @@ def threshold_video(frame):
     # Convert BGR to HSV
     hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
     # define HSV range to extract bright green features
-    lower_color = np.array([50, 150,160])
+    lower_color = np.array([50, 150, 120])
     upper_color = np.array([100, 255, 255])
     # extract qualifying pixels from image
     mask = cv2.inRange(hsv, lower_color, upper_color)
@@ -93,7 +93,7 @@ def find_targets(contours, image, center_x, center_y):
             contour_area = cv2.contourArea(contour)
             # Get moments of contour for centroid calculations
             moments = cv2.moments(contour)
-            # Find centeroids of contour
+            # Find centroid of contour
             if moments["m00"] != 0:
                 cx = int(moments["m10"] / moments["m00"])
                 cy = int(moments["m01"] / moments["m00"])
@@ -101,7 +101,7 @@ def find_targets(contours, image, center_x, center_y):
                 cx, cy = 0, 0
 
             ### CALCULATE CONTOUR ROTATION BY FITTING ELLIPSE ###
-            rotation = getEllipseRotation(image, contour)
+            rotation = get_ellipse_rotation(image, contour)
 
             ### DRAW CONTOUR ###
             # Get rotated bounding rectangle of contour
@@ -231,7 +231,7 @@ def calculate_pitch(pixel_y, center_y) -> float:
     pitch *= -1
     return pitch
 
-def getEllipseRotation(image, contour):
+def get_ellipse_rotation(image, contour):
     try:
         # Gets rotated bounding ellipse of contour
         ellipse = cv2.fitEllipse(contour)

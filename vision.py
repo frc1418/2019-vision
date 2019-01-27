@@ -87,7 +87,7 @@ def find_targets(contours, image):
         # Sort contours in descending order by size
         contours.sort(key=lambda contour: cv2.contourArea(contour), reverse=True)
 
-        largest_contours = []
+        valid_contours = []
         for contour in contours:
             # Calculate areas of contour
             contour_area = cv2.contourArea(contour)
@@ -105,12 +105,6 @@ def find_targets(contours, image):
                 rotation = get_ellipse_rotation(image, contour)
 
                 ### DRAW CONTOUR ###
-                # Get rotated bounding rectangle of contour
-                rect = cv2.minAreaRect(contour)
-                # Create box around that rectangle
-                box = cv2.boxPoints(rect)
-                box = np.int0(box)
-
                 # Draw white circle at center of contour
                 cv2.circle(image, (cx, cy), 6, (255, 255, 255))
 
@@ -118,22 +112,22 @@ def find_targets(contours, image):
                 cv2.drawContours(image, [contour], 0, (0, 200, 0), 1)
 
                 # Append important info to array
-                largest_contours.append({"cx": cx, "cy": cy, "rotation": rotation, "contour": contour})
+                valid_contours.append({"cx": cx, "cy": cy, "rotation": rotation, "contour": contour})
 
         # Sort array based on coordinates (left to right) to make sure contours are adjacent
-        largest_contours.sort(key=lambda contour: contour["cx"])
+        valid_contours.sort(key=lambda contour: contour["cx"])
 
         # Find targets from contours
-        for i in range(len(largest_contours) - 1):
+        for i in range(len(valid_contours) - 1):
             # Check rotation of adjacent contours
-            tilt_left = largest_contours[i]["rotation"]
-            tilt_right = largest_contours[i + 1]["rotation"]
+            tilt_left = valid_contours[i]["rotation"]
+            tilt_right = valid_contours[i + 1]["rotation"]
 
             # Contour coordinates
-            cx_left = largest_contours[i]["cx"]
-            cx_right = largest_contours[i + 1]["cx"]
-            cy_left = largest_contours[i]["cy"]
-            cy_right = largest_contours[i + 1]["cy"]
+            cx_left = valid_contours[i]["cx"]
+            cx_right = valid_contours[i + 1]["cx"]
+            cy_left = valid_contours[i]["cy"]
+            cy_right = valid_contours[i + 1]["cy"]
 
             # If contour angles are opposite
             # Negative tilt -> Rotated to the right

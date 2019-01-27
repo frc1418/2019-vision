@@ -59,6 +59,7 @@ def find_contours(frame, mask):
     # Get frame resolution
     screen_height, screen_width, _ = frame.shape
     # Calculate center of screen
+    # TODO: Why subtract 0.5?
     center_x = (screen_width / 2) - .5
     center_y = (screen_height / 2) - .5
     # Copy frame to image
@@ -117,22 +118,22 @@ def find_targets(contours, image, center_x, center_y):
             cv2.drawContours(image, [contour], 0, (0, 200, 0), 1)
 
             # Append important info to array
-            largest_contours.append([cx, cy, rotation, contour])
+            largest_contours.append({'cx': cx, 'cy': cy, 'rotation': rotation, 'contour': contour})
 
         # Sort array based on coordinates (left to right) to make sure contours are adjacent
-        largest_contours.sort(key=lambda contour: contour[0])
+        largest_contours.sort(key=lambda contour: contour['cx'])
 
         # Find targets from contours
         for i in range(len(largest_contours) - 1):
             # Check rotation of adjacent contours
-            tilt_left = largest_contours[i][2]
-            tilt_right = largest_contours[i + 1][2]
+            tilt_left = largest_contours[i]['rotation']
+            tilt_right = largest_contours[i + 1]['rotation']
 
             # Contour coordinates
-            cx_left = largest_contours[i][0]
-            cx_right = largest_contours[i + 1][0]
-            cy_left = largest_contours[i][1]
-            cy_right = largest_contours[i + 1][1]
+            cx_left = largest_contours[i]['cx']
+            cx_right = largest_contours[i + 1]['cx']
+            cy_left = largest_contours[i]['cy']
+            cy_right = largest_contours[i + 1]['cy']
 
             # If contour angles are opposite
             # Negative tilt -> Rotated to the right
@@ -144,24 +145,24 @@ def find_targets(contours, image, center_x, center_y):
 
                 target_center = (cx_left + cx_right) / 2
                 # Angle from center of camera to target (what you should pass into gyro)
-                target_yaw = calculate_yaw(target_center, center_x, H_FOCAL_LENGTH)
+                target_yaw = calculate_yaw(target_center, center_x)
 
                 # Push to NetworkTable
                 table.putNumber("target_yaw", target_yaw)
 
                 # Make sure no duplicates, then append
-                targets.append([target_center, target_yaw])
+                targets.append({'center': target_center, 'yaw': target_yaw})
 
     # Check if there are targets seen
     if len(targets) > 0:
         table.putBoolean("target_present", True)
         table.putNumber("targets_seen", len(targets))
         # Get target with smallest yaw
-        nearest_target = min(targets, key=lambda target: math.fabs(target[1]))
+        nearest_target = min(targets, key=lambda target: math.fabs(target['yaw']))
         # Draw yaw of target
-        cv2.putText(image, "Yaw: %.3f" % nearest_target[1], (1, 8), cv2.FONT_HERSHEY_PLAIN, .6, (255, 255, 255))
+        cv2.putText(image, "Yaw: %.3f" % nearest_target['yaw'], (1, 8), cv2.FONT_HERSHEY_PLAIN, .6, (255, 255, 255))
         # Draw central line
-        cv2.line(image, (nearest_target[0], screen_height), (nearest_target[0], 0), (255, 0, 0), 1)
+        cv2.line(image, (nearest_target[0], screen_height), (nearest_target["center"], 0), (255, 0, 0), 1)
 
         current_angle_error = nearest_target[1]
 
@@ -226,9 +227,7 @@ def calculate_pitch(pixel_y, center_y) -> float:
     """
     Explanation: https://docs.google.com/presentation/d/1ediRsI-oR3-kwawFJZ34_ZTlQS2SDBLjZasjzZ-eXbQ/pub?start=false&loop=false&slide=id.g12c083cffa_0_298
     """
-    pitch = math.degrees(math.atan((pixel_y - center_y) / V_FOCAL_LENGTH))
-    # Just stopped working have to do this:
-    pitch *= -1
+    pitch = -math.degrees(math.atan((pixel_y - center_y) / V_FOCAL_LENGTH))
     return pitch
 
 def get_ellipse_rotation(image, contour):

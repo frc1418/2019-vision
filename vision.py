@@ -106,11 +106,6 @@ def find_targets(contours, image, center_x, center_y):
             ### CALCULATE CONTOUR ROTATION BY FITTING ELLIPSE ###
             rotation = getEllipseRotation(image, contour)
 
-            # Calculate yaw of contour (horizontal position in degrees)
-            yaw = calculate_yaw(cx, center_x)
-            # Calculate pitch of contour (vertical position in degrees)
-            pitch = calculate_pitch(cy, center_y)
-
             ### DRAW CONTOUR ###
             # Get rotated bounding rectangle of contour
             rect = cv2.minAreaRect(contour)
@@ -118,8 +113,6 @@ def find_targets(contours, image, center_x, center_y):
             box = cv2.boxPoints(rect)
             box = np.int0(box)
 
-            # Draw vertical white line passing through center of contour
-            cv2.line(image, (cx, screenHeight), (cx, 0), (255, 255, 255))
             # Draw white circle at center of contour
             cv2.circle(image, (cx, cy), 6, (255, 255, 255))
 
@@ -128,18 +121,12 @@ def find_targets(contours, image, center_x, center_y):
 
             # Get coordinates and radius of contour's enclosing circle
             (x, y), radius = cv2.minEnclosingCircle(contour)
-            # Round coordinates and radius
-            center = (int(x), int(y))
-            radius = int(radius)
-            # Calculate then draw bounding rectangle of contour
-            rx, ry, rw, rh = cv2.boundingRect(contour)
-            cv2.rectangle(image, (rx, ry), (rx + rw, ry + rh), (23, 184, 80), 1)
 
             # Append important info to array
             largest_contours.append([cx, cy, rotation, contour])
 
         # Sort array based on coordinates (left to right) to make sure contours are adjacent
-        largest_contours.sort(key=lambda x: x[0])
+        largest_contours.sort(key=lambda contour: contour[0])
 
         # Find targets from contours
         for i in range(len(largest_contours) - 1):

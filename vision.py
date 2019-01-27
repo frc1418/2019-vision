@@ -39,7 +39,7 @@ def threshold_frame(frame):
     Calculate masked frame based on thresholding input video.
     """
     img = frame.copy()
-    blur = cv2.medianBlur(img, 5)
+    blur = cv2.medianBlur(img, 3)
 
     # Convert BGR to HSV
     hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
@@ -57,25 +57,21 @@ def find_contours(frame, mask):
     """
     # Calculate contours
     _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
-    print("Found %d contours initially." % len(contours))
-    # Get frame resolution
-    screen_height, screen_width, _ = frame.shape
-    # Copy frame to image
-    image = frame.copy()
-    # Find targets from contours
-    if len(contours) != 0:
-        image = find_targets(contours, image)
-    # Return image of contours overlayed on original video
-    return image
+    return contours
 
 
-def find_targets(contours, image):
+def find_targets(contours, frame):
     """
     Draw contours, calculating target angle.
 
     :param contours: list of contours among which to find targets.
-    :param image: image upon which to draw contours.
+    :param frame: image upon which to draw contours.
     """
+    # Copy frame, TODO why do we need to do this?
+    image = frame.copy()
+    # Return image of contours overlayed on original video
+    if len(contours) != 0:
+        return image
     screen_height, screen_width, _ = image.shape;
     # TODO: Why subtract?
     center_x = screen_width / 2 - .5
@@ -409,6 +405,8 @@ if __name__ == "__main__":
             continue
 
         mask = threshold_frame(frame)
-        processed = find_contours(frame, mask)
+        contours = find_contours(frame, mask)
+        print("Found %d contours initially." % len(contours))
+        processed_frame = find_targets(contours, frame)
         # (optional) send image back to the dashboard
-        output_stream.putFrame(processed)
+        output_stream.putFrame(processed_frame)

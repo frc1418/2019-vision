@@ -85,7 +85,7 @@ def find_targets(contours, image, center_x, center_y):
 
     if len(contours) >= 2:
         # Sort contours in descending order by size
-        contours.sort(key=lambda x: cv2.contourArea(x), reverse=True)
+        contours.sort(key=lambda contour: cv2.contourArea(contour), reverse=True)
 
         largest_contours = []
         for contour in contours:
@@ -107,9 +107,9 @@ def find_targets(contours, image, center_x, center_y):
             rotation = getEllipseRotation(image, contour)
 
             # Calculate yaw of contour (horizontal position in degrees)
-            yaw = calculate_yaw(cx, center_x, H_FOCAL_LENGTH)
+            yaw = calculate_yaw(cx, center_x)
             # Calculate pitch of contour (vertical position in degrees)
-            pitch = calculate_pitch(cy, center_y, V_FOCAL_LENGTH)
+            pitch = calculate_pitch(cy, center_y)
 
             ### DRAW CONTOUR ###
             # Get rotated bounding rectangle of contour
@@ -229,21 +229,21 @@ def calculate_distance(camera_height, target_height, pitch):
     return distance
 
 
-def calculate_yaw(pixel_x, center_x, h_focal_length) -> float:
+def calculate_yaw(pixel_x, center_x) -> float:
     """
     Use trig and focal length of camera to find yaw.
 
     Explanation: https://docs.google.com/presentation/d/1ediRsI-oR3-kwawFJZ34_ZTlQS2SDBLjZasjzZ-eXbQ/pub?start=false&loop=false&slide=id.g12c083cffa_0_298
     """
-    yaw = math.degrees(math.atan((pixel_x - center_x) / h_focal_length))
+    yaw = math.degrees(math.atan((pixel_x - center_x) / H_FOCAL_LENGTH))
     return yaw
 
 
-def calculate_pitch(pixel_y, center_y, v_focal_length) -> float:
+def calculate_pitch(pixel_y, center_y) -> float:
     """
     Explanation: https://docs.google.com/presentation/d/1ediRsI-oR3-kwawFJZ34_ZTlQS2SDBLjZasjzZ-eXbQ/pub?start=false&loop=false&slide=id.g12c083cffa_0_298
     """
-    pitch = math.degrees(math.atan((pixel_y - center_y) / v_focal_length))
+    pitch = math.degrees(math.atan((pixel_y - center_y) / V_FOCAL_LENGTH))
     # Just stopped working have to do this:
     pitch *= -1
     return pitch

@@ -154,7 +154,9 @@ def find_targets(contours, image, center_x, center_y):
             cy_right = largest_contours[i + 1][1]
 
             # If contour angles are indeed opposite
-            if (np.sign(tilt_left) != np.sign(tilt_right)):
+            # Temporarily, we are also assuming that if there are only two contours they are probably a target.
+            # TODO: check if this is really a good implementation
+            if np.sign(tilt_left) != np.sign(tilt_right) or len(largest_contours) == 2:
                 target_center = math.floor((cx_left + cx_right) / 2)
                 # Negative tilt -> Rotated to the right
                 # NOTE: if using rotated rect (min area rectangle), negative tilt means rotated to left

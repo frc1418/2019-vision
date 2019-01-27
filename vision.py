@@ -153,21 +153,15 @@ def find_targets(contours, image, center_x, center_y):
             cy_left = largest_contours[i][1]
             cy_right = largest_contours[i + 1][1]
 
-            # If contour angles are indeed opposite
-            # Temporarily, we are also assuming that if there are only two contours they are probably a target.
-            # TODO: check if this is really a good implementation
-            if np.sign(tilt_left) != np.sign(tilt_right) or len(largest_contours) == 2:
-                target_center = math.floor((cx_left + cx_right) / 2)
-                # Negative tilt -> Rotated to the right
-                # NOTE: if using rotated rect (min area rectangle), negative tilt means rotated to left
-                # If left contour rotation is tilted to the left then skip iteration
-                if (tilt_left > 0):
-                    if (cx_left < cx_right):
-                        continue
-                # If right contour rotation is tilted to the right then skip iteration
-                if (tilt_right > 0):
-                    if (cx_right < cx_left):
-                        continue
+            # If contour angles are opposite
+            # Negative tilt -> Rotated to the right
+            # NOTE: if using rotated rect (min area rectangle), negative tilt means rotated to left
+            # If left contour rotation is tilted to the left then skip iteration
+            # If right contour rotation is tilted to the right then skip iteration
+            if (np.sign(tilt_left) != np.sign(tilt_right) and
+                    not (tilt_left > 0 and cx_left < cx_right or tilt_right > 0 and cx_right < cx_left)):
+
+                target_center = (cx_left + cx_right) / 2
                 # Angle from center of camera to target (what you should pass into gyro)
                 target_yaw = calculate_yaw(target_center, center_x, H_FOCAL_LENGTH)
 

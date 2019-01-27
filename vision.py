@@ -156,12 +156,14 @@ def find_targets(contours, image, center_x, center_y):
                 targets.append([target_center, target_yaw])
     # Check if there are targets seen
     if len(targets) > 0:
-        table.putBoolean("target_seen", True)
+        table.putBoolean("target_present", True)
+        table.putNumber("targets_seen", len(targets))
         # Sort targets based on x coords to break any angle tie
-        targets.sort(key=lambda x: math.fabs(x[0]))
+        targets.sort(key=lambda target: math.fabs(target[0]))
         final_target = min(targets, key=lambda x: math.fabs(x[1]))
         # Draw yaw of target + line where center of target is
         cv2.putText(image, "Yaw: " + str(final_target[1]), (1, 8), cv2.FONT_HERSHEY_PLAIN, .6, (255, 255, 255))
+        # Draw central line
         cv2.line(image, (final_target[0], screenHeight), (final_target[0], 0), (255, 0, 0), 1)
 
         current_angle_error = final_target[1]
@@ -406,7 +408,9 @@ if __name__ == "__main__":
 
     # loop forever
     while True:
-        table.putBoolean("target_seen", False)
+        table.putBoolean("target_present", False)
+        table.putNumber("targets_seen", 0)
+
         # Tell the CvSink to grab a frame from the camera and put it
         # in the source image.  If there is an error notify the output.
         timestamp, img = cvSink.grabFrame(img)

@@ -58,29 +58,26 @@ def find_contours(frame, mask):
     print("Found %d contours initially." % len(contours))
     # Get frame resolution
     screen_height, screen_width, _ = frame.shape
-    # Calculate center of screen
-    # TODO: Why subtract 0.5?
-    center_x = (screen_width / 2) - .5
-    center_y = (screen_height / 2) - .5
     # Copy frame to image
     image = frame.copy()
-    # Processes contours
+    # Find targets from contours
     if len(contours) != 0:
-        image = find_targets(contours, image, center_x, center_y)
+        image = find_targets(contours, image)
     # Return image of contours overlayed on original video
     return image
 
 
-def find_targets(contours, image, center_x, center_y):
+def find_targets(contours, image):
     """
     Draw contours, calculating target angle.
 
     :param contours: list of contours among which to find targets.
     :param image: image upon which to draw contours.
-    :param center_x: x coordinate of image center.
-    :param center_y: y coordinate of image center.
     """
     screen_height, screen_width, _ = image.shape;
+    # TODO: Why subtract?
+    center_x = screen_width / 2 - .5
+    center_y = screen_height / 2 - .5
     # List for storing found targets
     targets = []
 

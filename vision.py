@@ -36,7 +36,7 @@ MIN_CONTOUR_SIZE = 3
 
 def threshold_frame(frame):
     """
-    Calculate masked frame based on thresholding input video.
+    Calculate mask by thresholding input frame.
     """
     img = frame.copy()
     blur = cv2.medianBlur(img, 3)
@@ -51,27 +51,26 @@ def threshold_frame(frame):
     return mask
 
 
-def find_contours(frame, mask):
+def find_contours(mask):
     """
     Find contours of image mask, displaying them over original stream.
     """
-    # Calculate contours
     _, contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_KCOS)
     return contours
 
 
 def find_targets(contours, frame):
     """
-    Draw contours, calculating target angle.
+    Find targets and draw on frame.
 
     :param contours: list of contours among which to find targets.
     :param frame: image upon which to draw contours.
     """
+    # If there aren't any contours present, return frame without drawing
+    if len(contours) == 0:
+        return frame
     # Copy frame, TODO why do we need to do this?
     image = frame.copy()
-    # Return image of contours overlayed on original video
-    if len(contours) != 0:
-        return image
     screen_height, screen_width, _ = image.shape;
     # TODO: Why subtract?
     center_x = screen_width / 2 - .5
@@ -92,8 +91,9 @@ def find_targets(contours, frame):
                 moments = cv2.moments(contour)
                 # Find centroid of contour
                 if moments["m00"] != 0:
-                    cx = int(moments["m10"] / moments["m00"])
-                    cy = int(moments["m01"] / moments["m00"])
+                    # TODO: Wouldn't this work better if we allow it to continue being float?
+                    cx = moments["m10"] // moments["m00"]
+                    cy = moments["m01"] // moments["m00"]
                 else:
                     cx, cy = 0, 0
 
@@ -108,7 +108,7 @@ def find_targets(contours, frame):
                 cv2.drawContours(image, [contour], 0, (0, 200, 0), 1)
 
                 # Append important info to array
-                valid_contours.append({"cx": cx, "cy": cy, "rotation": rotation, "contour": contour})
+                valid_contours.append({"cx": cx, "cy": cy, "rotation": rotation})
 
         # Sort array based on coordinates (left to right) to make sure contours are adjacent
         valid_contours.sort(key=lambda contour: contour["cx"])
@@ -147,11 +147,14 @@ def find_targets(contours, frame):
         # Draw line at center of screen
         cv2.line(image, (round(center_x), screen_height), (round(center_x), 0), (255, 255, 255), 1)
 
+        target_yaw = calculate_yaw(nearest_target["cx"], center_x)
+        target_pitch = calculate_pitch(nearest_target["cy"], center_y)
+        target_distance = calculate_distance(
         # Send our final data to NetworkTables
         table.putBoolean("target_present", True)
         table.putNumber("targets_seen", len(targets))
-        table.putNumber("target_yaw", calculate_yaw(nearest_target["cx"], center_x))
-        table.putNumber("target_pitch", calculate_pitch(nearest_target["cy"], center_y))
+        table.putNumber("target_yaw", target_yaw)
+        table.putNumber("target_pitch", target_pitch)
 
     return image
 
@@ -405,7 +408,7 @@ if __name__ == "__main__":
             continue
 
         mask = threshold_frame(frame)
-        contours = find_contours(frame, mask)
+        contours = find_contours(mask)
         print("Found %d contours initially." % len(contours))
         processed_frame = find_targets(contours, frame)
         # (optional) send image back to the dashboard

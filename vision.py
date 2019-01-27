@@ -32,7 +32,7 @@ VERTICAL_FOV = math.atan(math.tan(DIAGONAL_FOV/2) * (VERTICAL_ASPECT / DIAGONAL_
 H_FOCAL_LENGTH = IMAGE_WIDTH / (2 * math.tan(HORIZONTAL_FOV / 2))
 V_FOCAL_LENGTH = IMAGE_HEIGHT / (2 * math.tan(VERTICAL_FOV / 2))
 
-MIN_CONTOUR_SIZE = 3
+MIN_CONTOUR_SIZE = 1
 
 def threshold_frame(frame):
     """
@@ -44,7 +44,7 @@ def threshold_frame(frame):
     # Get image in HSV colorspace
     hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
     # Define HSV range of bright green features
-    lower_threshold = np.array([50, 150, 120])
+    lower_threshold = np.array([50, 150, 50])
     upper_threshold = np.array([100, 255, 255])
     # Extract qualifying pixels from image
     mask = cv2.inRange(hsv, lower_threshold, upper_threshold)
@@ -129,7 +129,7 @@ def find_targets(contours, frame):
             # NOTE: if using rotated rect (min area rectangle), negative tilt means rotated to left
             # If left contour rotation is tilted to the left then skip iteration
             # If right contour rotation is tilted to the right then skip iteration
-            if (np.sign(tilt_left) != np.sign(tilt_right) and
+            if (len(valid_contours) == 2) or (np.sign(tilt_left) != np.sign(tilt_right) and
                     not (tilt_left > 0 and cx_left < cx_right or tilt_right > 0 and cx_right < cx_left)):
 
                 target_cx = (cx_left + cx_right) / 2
@@ -150,9 +150,9 @@ def find_targets(contours, frame):
         # Get target with smallest yaw
         nearest_target = min(targets, key=lambda target: math.fabs(target["yaw"]))
         # Write yaw of target in corner of image
-        cv2.putText(image, "Yaw: %.3f" % nearest_target["yaw"], (1, 8), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255))
+        cv2.putText(image, "Yaw: %.3f" % nearest_target["yaw"], (1, 12), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255))
         # Draw line at center of target
-        cv2.line(image, (nearest_target["cx"], screen_height), (nearest_target["cx"], 0), (255, 0, 0), 1)
+        cv2.line(image, (int(nearest_target["cx"]), screen_height), (int(nearest_target["cx"]), 0), (255, 0, 0), 1)
         # Draw line at center of screen
         cv2.line(image, (round(center_x), screen_height), (round(center_x), 0), (255, 255, 255), 1)
 

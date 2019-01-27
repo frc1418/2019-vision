@@ -44,10 +44,10 @@ def threshold_video(frame):
     # Convert BGR to HSV
     hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
     # define HSV range to extract bright green features
-    lower_color = np.array([50, 150, 120])
-    upper_color = np.array([100, 255, 255])
+    lower_threshold = np.array([50, 150, 120])
+    upper_threshold = np.array([100, 255, 255])
     # extract qualifying pixels from image
-    mask = cv2.inRange(hsv, lower_color, upper_color)
+    mask = cv2.inRange(hsv, lower_threshold, upper_threshold)
     return mask
 
 
@@ -151,6 +151,7 @@ def find_targets(contours, image):
         # Draw line at center of screen
         cv2.line(image, (round(center_x), screen_height), (round(center_x), 0), (255, 255, 255), 1)
 
+        # Send our final data to NetworkTables
         table.putBoolean("target_present", True)
         table.putNumber("targets_seen", len(targets))
         table.putNumber("target_yaw", calculate_yaw(nearest_target["cx"], center_x))

@@ -13,24 +13,24 @@ import math
 
 # Lifecam 3000
 # Datasheet: https://dl2jx7zfbtwvr.cloudfront.net/specsheets/WEBC1010.pdf
-diagonal_fov = math.radians(68.5)
+DIAGONAL_FOV = math.radians(68.5)
 
 # 16:9 aspect ratio
-horizontal_aspect = 16
-vertical_aspect = 9
+HORIZONTAL_ASPECT = 16
+VERTICAL_ASPECT = 9
 
-image_width = 480
-image_height = 270
+IMAGE_WIDTH = 480
+IMAGE_HEIGHT = 270
 
-# Reasons for using diagonal aspect is to calculate horizontal field of view.
-diagonal_aspect = math.hypot(horizontal_aspect, vertical_aspect)
+# Used to calculate horizontal FOV
+DIAGONAL_ASPECT = math.hypot(HORIZONTAL_ASPECT, VERTICAL_ASPECT)
 # Calculations: http://vrguy.blogspot.com/2013/04/converting-diagonal-field-of-view-and.html
-horizontal_view = math.atan(math.tan(diagonal_fov/2) * (horizontal_aspect / diagonal_aspect)) * 2
-vertical_view = math.atan(math.tan(diagonal_fov/2) * (vertical_aspect / diagonal_aspect)) * 2
+HORIZONTAL_FOV = math.atan(math.tan(DIAGONAL_FOV/2) * (HORIZONTAL_ASPECT / DIAGONAL_ASPECT)) * 2
+VERTICAL_FOV = math.atan(math.tan(DIAGONAL_FOV/2) * (VERTICAL_ASPECT / DIAGONAL_ASPECT)) * 2
 
 # Focal Length calculations: https://docs.google.com/presentation/d/1ediRsI-oR3-kwawFJZ34_ZTlQS2SDBLjZasjzZ-eXbQ/pub?start=false&loop=false&slide=id.g12c083cffa_0_165
-H_FOCAL_LENGTH = image_width / (2*math.tan((horizontal_view/2)))
-V_FOCAL_LENGTH = image_height / (2*math.tan((vertical_view/2)))
+H_FOCAL_LENGTH = IMAGE_WIDTH / (2 * math.tan(HORIZONTAL_FOV / 2))
+V_FOCAL_LENGTH = IMAGE_HEIGHT / (2 * math.tan(VERTICAL_FOV / 2))
 
 MIN_CONTOUR_SIZE = 3
 
@@ -384,9 +384,9 @@ if __name__ == "__main__":
     cvSink = cameraServer.getVideo()
 
     # (optional) Setup a CvSource. This will send images back to the Dashboard
-    outputStream = cameraServer.putVideo("stream", image_width, image_height)
+    outputStream = cameraServer.putVideo("stream", IMAGE_WIDTH, IMAGE_HEIGHT)
     # Allocating new images is very expensive, always try to preallocate
-    img = np.zeros(shape=(image_height, image_width, 3), dtype=np.uint8)
+    img = np.zeros(shape=(IMAGE_HEIGHT, IMAGE_WIDTH, 3), dtype=np.uint8)
 
     # loop forever
     while True:

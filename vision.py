@@ -143,7 +143,7 @@ def find_targets(contours, image):
                 target_center = (cx_left + cx_right) / 2
 
                 # Make sure no duplicates, then append
-                targets.append({"center": target_center, "yaw": target_yaw})
+                targets.append({"center": target_center})
 
     # Check if there are targets seen
     if len(targets) > 0:

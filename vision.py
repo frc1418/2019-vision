@@ -137,13 +137,11 @@ def find_targets(contours, frame):
 
                 target_yaw = calculate_yaw(target_cx, center_x)
                 target_pitch = calculate_pitch(target_cy, center_y)
-                #target_distance = calculate_distance(target_pitch)
 
                 targets.append({"cx": target_cx,
                                 "cy": target_cy,
                                 "yaw": target_yaw,
-                                "pitch": target_pitch,
-                                "distance": target_distance})
+                                "pitch": target_pitch})
 
     # Check if there are targets seen
     if len(targets) > 0:
@@ -161,7 +159,6 @@ def find_targets(contours, frame):
         table.putNumber("targets_seen", len(targets))
         table.putNumber("target_yaw", nearest_target["yaw"])
         table.putNumber("target_pitch", nearest_target["pitch"])
-        table.putNumber("target_distance", nearest_target["distance"])
 
     return image
 

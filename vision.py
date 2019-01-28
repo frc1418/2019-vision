@@ -137,7 +137,7 @@ def find_targets(contours, frame):
 
                 target_yaw = calculate_yaw(target_cx, center_x)
                 target_pitch = calculate_pitch(target_cy, center_y)
-                target_distance = calculate_distance(target_pitch)
+                #target_distance = calculate_distance(target_pitch)
 
                 targets.append({"cx": target_cx,
                                 "cy": target_cy,
@@ -188,13 +188,13 @@ def calculate_distance(pitch):
 
     d = h / tan a
 
-                         .
-                        /|
-                       / |
-                      /  |h
-                     /a  |
-              camera -----
-                       d
+                 .
+                /|
+               / |
+              /  |h
+             /a  |
+      camera -----
+               d
 
     :param camera_height: height of camera from ground.
     :param target_height: height of target from ground.

@@ -159,6 +159,12 @@ def find_targets(contours, frame):
         table.putNumber("targets_seen", len(targets))
         table.putNumber("target_yaw", nearest_target["yaw"])
         table.putNumber("target_pitch", nearest_target["pitch"])
+    else:
+        table.putBoolean("target_present", False)
+        table.putNumber("targets_seen", 0)
+        table.putNumber("target_yaw", 0)
+        table.putNumber("target_pitch", 0)
+        table.putNumber("target_distance", 0)
 
     return image
 
@@ -397,11 +403,6 @@ if __name__ == "__main__":
 
     # loop forever
     while True:
-        table.putBoolean("target_present", False)
-        table.putNumber("targets_seen", 0)
-        table.putNumber("target_yaw", 0)
-        table.putNumber("target_pitch", 0)
-        table.putNumber("target_distance", 0)
 
         # Tell the CvSink to grab a frame from the camera and put it
         # in the source image.  If there is an error notify the output.
